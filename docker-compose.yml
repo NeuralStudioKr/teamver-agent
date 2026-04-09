@@ -11,7 +11,7 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     ports:
-      - '5433:5432'
+      - '5434:5432'
     restart: unless-stopped
     healthcheck:
       test: ['CMD-SHELL', 'pg_isready -U teamver -d teamver_agent']
@@ -23,7 +23,7 @@ services:
     build: ./backend
     container_name: ta-backend
     ports:
-      - '3001:3001'
+      - '3101:3001'
     environment:
       - PORT=3001
       - JWT_SECRET=${JWT_SECRET}
@@ -40,12 +40,12 @@ services:
     build:
       context: ./frontend
       args:
-        - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-http://localhost:3001}
+        - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-http://localhost:3101}
     container_name: ta-frontend
     ports:
-      - '3000:3000'
+      - '3100:3000'
     environment:
-      - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-http://localhost:3001}
+      - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-http://localhost:3101}
     restart: unless-stopped
 
 volumes:
