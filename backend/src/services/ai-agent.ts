@@ -28,7 +28,9 @@ export async function generateAIResponse(agentId: string, channelContext: string
     ]) as any
 
     return response?.content?.[0]?.text || null
-  } catch {
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err)
+    console.error(`[ai-agent] 응답 생성 실패 (agentId=${agentId}):`, message)
     return null
   }
 }
