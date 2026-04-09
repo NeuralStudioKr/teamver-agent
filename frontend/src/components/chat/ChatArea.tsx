@@ -125,7 +125,10 @@ export default function ChatArea({ channelId, socket, currentUser, apiBase }: Ch
   }
 
   const addReaction = async (messageId: string, emoji: string) => {
-    try { await api.addReaction(messageId, emoji) } catch {}
+    try {
+      const updated = await api.addReaction(messageId, emoji)
+      setMessages(prev => prev.map(m => m.id === messageId ? { ...m, reactions: updated.reactions } : m))
+    } catch {}
   }
 
   if (!channelId) return (

@@ -1,8 +1,9 @@
 import type { Metadata } from 'next'
-import { Inter } from 'next/font/google'
+import { Inter, Noto_Sans_KR } from 'next/font/google'
 import './globals.css'
 
-const inter = Inter({ subsets: ['latin'] })
+const inter = Inter({ subsets: ['latin'], variable: '--font-inter' })
+const notoSansKR = Noto_Sans_KR({ subsets: ['latin'], weight: ['400', '500', '700'], variable: '--font-noto' })
 
 export const metadata: Metadata = {
   title: 'Teamver Agent',
@@ -12,7 +13,7 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="ko" className="dark">
-      <body className={inter.className}>{children}</body>
+      <body className={`${inter.variable} ${notoSansKR.variable} font-sans`} style={{ fontFamily: 'var(--font-noto), var(--font-inter), sans-serif' }}>{children}</body>
     </html>
   )
 }

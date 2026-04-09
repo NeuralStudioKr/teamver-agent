@@ -100,15 +100,17 @@ export async function initDB() {
       ON CONFLICT (workspace_id, email) DO NOTHING
     `, [wsId])
 
-    // Seed channels
-    const chGeneral = uuidv4()
-    const chDev = uuidv4()
+    // Seed channels — workspace_id+name 기준으로 중복 방지
     await client.query(`
-      INSERT INTO channels (id, workspace_id, name, description) VALUES
-        ($1, $3, 'general', '일반 채널'),
-        ($2, $3, '개발', '개발 채널')
-      ON CONFLICT DO NOTHING
-    `, [chGeneral, chDev, wsId])
+      INSERT INTO channels (workspace_id, name, description)
+      SELECT $1, 'general', '일반 채널'
+      WHERE NOT EXISTS (SELECT 1 FROM channels WHERE workspace_id=$1 AND name='general')
+    `, [wsId])
+    await client.query(`
+      INSERT INTO channels (workspace_id, name, description)
+      SELECT $1, '개발', '개발 채널'
+      WHERE NOT EXISTS (SELECT 1 FROM channels WHERE workspace_id=$1 AND name='개발')
+    `, [wsId])
 
     console.log('✅ Database initialized')
   } finally {
