@@ -9,11 +9,20 @@ export default function RegisterPage() {
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [passwordConfirm, setPasswordConfirm] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (password !== passwordConfirm) {
+      setError('비밀번호가 일치하지 않습니다.')
+      return
+    }
+    if (password.length < 6) {
+      setError('비밀번호는 6자 이상이어야 합니다.')
+      return
+    }
     setLoading(true)
     setError('')
     try {
@@ -59,6 +68,20 @@ export default function RegisterPage() {
               <input type="password" value={password} onChange={e => setPassword(e.target.value)} required
                 className="w-full bg-secondary border border-border rounded-lg px-4 py-2.5 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring text-sm"
                 placeholder="••••••••" />
+            </div>
+            <div>
+              <label className="text-sm text-muted-foreground block mb-1.5">비밀번호 확인</label>
+              <input type="password" value={passwordConfirm} onChange={e => setPasswordConfirm(e.target.value)} required
+                className={`w-full bg-secondary border rounded-lg px-4 py-2.5 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring text-sm ${
+                  passwordConfirm && password !== passwordConfirm ? 'border-destructive' : 'border-border'
+                }`}
+                placeholder="••••••••" />
+              {passwordConfirm && password !== passwordConfirm && (
+                <p className="text-destructive text-xs mt-1">비밀번호가 일치하지 않습니다.</p>
+              )}
+              {passwordConfirm && password === passwordConfirm && (
+                <p className="text-green-500 text-xs mt-1">✓ 비밀번호가 일치합니다.</p>
+              )}
             </div>
             <button type="submit" disabled={loading}
               className="w-full bg-primary text-primary-foreground rounded-lg py-2.5 text-sm font-medium hover:bg-primary/90 transition-colors disabled:opacity-50">
