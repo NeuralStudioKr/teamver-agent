@@ -2,7 +2,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { Hash, Plus, ChevronDown, ChevronRight, LogOut, UserX } from 'lucide-react'
+import { Hash, Plus, ChevronDown, ChevronRight, LogOut, UserX, HardDrive } from 'lucide-react'
 import { api, clearToken, getApiBase } from '@/lib/api'
 import { cn } from '@/lib/utils'
 
@@ -78,6 +78,22 @@ export default function Sidebar({ workspace, channels, members, activeChannel, o
 
       {/* Nav */}
       <div className="flex-1 overflow-y-auto py-2">
+        {/* Drive */}
+        <div className="px-2 mb-2">
+          <Link
+            href="/workspace/drive"
+            className={cn(
+              'flex items-center gap-2 w-full px-3 py-1.5 rounded-md text-sm transition-colors',
+              pathname === '/workspace/drive'
+                ? 'bg-primary/20 text-primary font-medium'
+                : 'text-muted-foreground hover:bg-accent/50 hover:text-foreground'
+            )}
+          >
+            <HardDrive size={14} className="flex-shrink-0" />
+            <span className="truncate">드라이브</span>
+          </Link>
+        </div>
+
         {/* Channels */}
         <div className="px-2 mb-2">
           <button

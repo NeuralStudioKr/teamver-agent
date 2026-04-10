@@ -81,6 +81,24 @@ export async function initDB() {
       );
 
       CREATE INDEX IF NOT EXISTS idx_dm_messages_users ON dm_messages(from_user_id, to_user_id, created_at DESC);
+
+      CREATE TABLE IF NOT EXISTS drive_files (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        workspace_id UUID REFERENCES workspaces(id) ON DELETE CASCADE,
+        name VARCHAR(255) NOT NULL,
+        mime_type VARCHAR(100) DEFAULT 'text/markdown',
+        size INT DEFAULT 0,
+        content TEXT,
+        file_url TEXT,
+        created_by_id UUID REFERENCES users(id) ON DELETE SET NULL,
+        created_by_name VARCHAR(100) NOT NULL DEFAULT '알 수 없음',
+        tags TEXT[] DEFAULT '{}',
+        description TEXT DEFAULT '',
+        created_at TIMESTAMPTZ DEFAULT NOW(),
+        updated_at TIMESTAMPTZ DEFAULT NOW()
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_drive_files_workspace ON drive_files(workspace_id, updated_at DESC);
     `)
 
     // Seed default workspace

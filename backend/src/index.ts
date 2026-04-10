@@ -9,6 +9,7 @@ import { channelRoutes } from './routes/channels.js'
 import { dmRoutes } from './routes/dm.js'
 import { workspaceRoutes } from './routes/workspace.js'
 import { fileRoutes } from './routes/files.js'
+import { driveRoutes } from './routes/drive.js'
 import { store } from './services/store.js'
 import { initDB } from './services/db.js'
 // AI 자동 응답 비활성화 — OpenClaw 인스턴스가 직접 로그인해서 메시지 전송
@@ -38,6 +39,7 @@ await app.register(channelRoutes)
 await app.register(dmRoutes)
 await app.register(workspaceRoutes)
 await app.register(fileRoutes)
+await app.register(driveRoutes)
 app.get('/health', async () => ({ status: 'ok', version: '2.0.0' }))
 
 const io = new Server(app.server, { cors: { origin: true, credentials: true } })

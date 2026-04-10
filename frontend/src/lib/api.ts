@@ -62,6 +62,35 @@ export const api = {
   sendDmMessage: (userId: string, content: string) =>
     request<any>(`/dm/${userId}/messages`, { method: 'POST', body: JSON.stringify({ content }) }),
 
+  // Drive API
+  getDriveFiles: (search?: string, tag?: string) => {
+    const params = new URLSearchParams()
+    if (search) params.set('search', search)
+    if (tag) params.set('tag', tag)
+    const qs = params.toString()
+    return request<any[]>(`/drive/files${qs ? '?' + qs : ''}`)
+  },
+  getDriveFile: (id: string) => request<any>(`/drive/files/${id}`),
+  createDriveFile: (data: { name: string; content: string; mime_type?: string; tags?: string[]; description?: string }) =>
+    request<any>('/drive/files', { method: 'POST', body: JSON.stringify(data) }),
+  updateDriveFile: (id: string, data: { name?: string; content?: string; tags?: string[]; description?: string }) =>
+    request<any>(`/drive/files/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
+  deleteDriveFile: (id: string) =>
+    request<any>(`/drive/files/${id}`, { method: 'DELETE' }),
+  uploadDriveFile: (file: File, meta?: { name?: string; tags?: string[]; description?: string }) => {
+    const form = new FormData()
+    form.append('file', file)
+    if (meta?.name) form.append('name', meta.name)
+    if (meta?.tags) form.append('tags', JSON.stringify(meta.tags))
+    if (meta?.description) form.append('description', meta.description)
+    const token = getToken()
+    return fetch(`${BASE}/drive/upload`, {
+      method: 'POST',
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      body: form,
+    }).then(r => r.json())
+  },
+
   uploadFile: (file: File) => {
     const form = new FormData()
     form.append('file', file)
