@@ -1,9 +1,11 @@
 'use client'
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { api } from '@/lib/api'
+import { useWorkspace } from '@/lib/WorkspaceContext'
 import MessageItem from './MessageItem'
 import ThreadPanel from './ThreadPanel'
 import { Send, Paperclip, Hash, Users, UserPlus, X } from 'lucide-react'
+import { cn } from '@/lib/utils'
 
 interface ChatAreaProps {
   channelId: string
@@ -15,6 +17,10 @@ interface ChatAreaProps {
 const EMOJI_LIST = ['👍','❤️','😂','😮','😢','🎉','🔥','💯']
 
 export default function ChatArea({ channelId, socket, currentUser, apiBase }: ChatAreaProps) {
+  const { channels } = useWorkspace()
+  const activeChannel = channels.find(c => c.id === channelId)
+  const channelName: string = activeChannel?.name || '채널'
+
   const [messages, setMessages] = useState<any[]>([])
   const [text, setText] = useState('')
   const [loading, setLoading] = useState(false)
@@ -25,8 +31,10 @@ export default function ChatArea({ channelId, socket, currentUser, apiBase }: Ch
   const [showMembers, setShowMembers] = useState(false)
   const [showInvite, setShowInvite] = useState(false)
   const [allMembers, setAllMembers] = useState<any[]>([])
+  const [isDragging, setIsDragging] = useState(false)
   const bottomRef = useRef<HTMLDivElement>(null)
   const typingTimerRef = useRef<any>(null)
+  const dragCounterRef = useRef(0)
 
   const loadMessages = useCallback(async () => {
     if (!channelId) return
@@ -99,29 +107,68 @@ export default function ChatArea({ channelId, socket, currentUser, apiBase }: Ch
     }, 400)
   }
 
+  const uploadAndSend = async (file: File) => {
+    if (!socket || !channelId) return
+    try {
+      const { url, name, type } = await api.uploadFile(file)
+      socket.emit('send_message', { channelId, content: '', fileUrl: url, fileName: name, fileType: type })
+    } catch {}
+  }
+
   const handlePaste = async (e: React.ClipboardEvent) => {
     const items = Array.from(e.clipboardData.items)
     for (const item of items) {
       if (item.type.startsWith('image/')) {
         e.preventDefault()
         const file = item.getAsFile()
-        if (!file || !socket) return
-        try {
-          const { url, name, type } = await api.uploadFile(file)
-          socket.emit('send_message', { channelId, content: '', fileUrl: url, fileName: name, fileType: type })
-        } catch {}
+        if (file) await uploadAndSend(file)
       }
     }
   }
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
-    if (!file || !socket) return
-    try {
-      const { url, name, type } = await api.uploadFile(file)
-      socket.emit('send_message', { channelId, content: '', fileUrl: url, fileName: name, fileType: type })
-    } catch {}
+    if (file) await uploadAndSend(file)
     e.target.value = ''
+  }
+
+  const hasFiles = (e: React.DragEvent) =>
+    Array.from(e.dataTransfer.types || []).includes('Files')
+
+  const handleDragEnter = (e: React.DragEvent) => {
+    if (!hasFiles(e)) return
+    e.preventDefault()
+    e.stopPropagation()
+    dragCounterRef.current += 1
+    setIsDragging(true)
+  }
+
+  const handleDragOver = (e: React.DragEvent) => {
+    if (!hasFiles(e)) return
+    e.preventDefault()
+    e.stopPropagation()
+    e.dataTransfer.dropEffect = 'copy'
+  }
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    if (!hasFiles(e)) return
+    e.preventDefault()
+    e.stopPropagation()
+    dragCounterRef.current -= 1
+    if (dragCounterRef.current <= 0) {
+      dragCounterRef.current = 0
+      setIsDragging(false)
+    }
+  }
+
+  const handleDrop = async (e: React.DragEvent) => {
+    if (!hasFiles(e)) return
+    e.preventDefault()
+    e.stopPropagation()
+    dragCounterRef.current = 0
+    setIsDragging(false)
+    const files = Array.from(e.dataTransfer.files)
+    for (const f of files) await uploadAndSend(f)
   }
 
   const openThread = async (msg: any) => {
@@ -149,24 +196,31 @@ export default function ChatArea({ channelId, socket, currentUser, apiBase }: Ch
 
   return (
     <div className="flex-1 flex h-full overflow-hidden">
-      <div className="flex-1 flex flex-col min-w-0">
+      <div
+        className="flex-1 flex flex-col min-w-0 relative"
+        onDragEnter={handleDragEnter}
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
+      >
         {/* Header */}
         <div className="px-4 py-3 border-b border-border flex items-center gap-2 relative">
-          <Hash size={16} className="text-muted-foreground" />
-          <span className="font-semibold text-sm flex-1">채널</span>
+          <Hash size={18} className="text-muted-foreground flex-shrink-0" />
+          <span className="font-semibold text-base flex-1 truncate" title={channelName}>{channelName}</span>
           <button
             onClick={() => { setShowMembers(v => !v); setShowInvite(false) }}
-            className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground px-2 py-1 rounded-md hover:bg-accent/50 transition-colors"
+            className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground px-2.5 py-1.5 rounded-md hover:bg-accent/50 transition-colors"
+            title="채널 멤버"
           >
-            <Users size={14} />
+            <Users size={18} />
             <span>{channelMembers.length}명</span>
           </button>
           <button
             onClick={() => { setShowInvite(v => !v); setShowMembers(false) }}
-            className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground px-2 py-1 rounded-md hover:bg-accent/50 transition-colors"
+            className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground px-2.5 py-1.5 rounded-md hover:bg-accent/50 transition-colors"
             title="멤버 초대"
           >
-            <UserPlus size={14} />
+            <UserPlus size={18} />
           </button>
 
           {/* 멤버 목록 패널 */}
@@ -254,7 +308,7 @@ export default function ChatArea({ channelId, socket, currentUser, apiBase }: Ch
             </label>
             <textarea
               className="flex-1 bg-transparent text-sm placeholder:text-muted-foreground outline-none resize-none max-h-32 min-h-[24px]"
-              placeholder="메시지 입력... (Ctrl+V로 이미지 붙여넣기)"
+              placeholder="메시지 입력... (Ctrl+V 붙여넣기 · 파일을 끌어다 놓을 수 있어요)"
               value={text} rows={1}
               onChange={e => { setText(e.target.value); handleTyping() }}
               onKeyDown={e => e.key === 'Enter' && !e.shiftKey && (e.preventDefault(), send())}
@@ -263,6 +317,21 @@ export default function ChatArea({ channelId, socket, currentUser, apiBase }: Ch
             <button onClick={send} disabled={!text.trim()} className="w-7 h-7 rounded-lg bg-primary disabled:opacity-30 flex items-center justify-center hover:bg-primary/80 transition-colors flex-shrink-0">
               <Send size={14} className="text-primary-foreground" />
             </button>
+          </div>
+        </div>
+
+        {/* Drag overlay */}
+        <div
+          className={cn(
+            'pointer-events-none absolute inset-0 z-30 flex items-center justify-center transition-opacity',
+            isDragging ? 'opacity-100' : 'opacity-0'
+          )}
+        >
+          <div className="absolute inset-3 rounded-2xl border-2 border-dashed border-primary bg-primary/10 backdrop-blur-[1px]" />
+          <div className="relative flex flex-col items-center gap-2 px-6 py-4 rounded-xl bg-card/90 border border-primary shadow-xl">
+            <Paperclip size={24} className="text-primary" />
+            <p className="text-sm font-semibold text-foreground">파일을 여기에 놓으세요</p>
+            <p className="text-xs text-muted-foreground">#{channelName} 채널에 업로드</p>
           </div>
         </div>
       </div>

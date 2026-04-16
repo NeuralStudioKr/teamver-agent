@@ -9,6 +9,7 @@ export interface WorkspaceContextValue {
   currentUser: any
   workspace: any
   members: any[]
+  channels: any[]
 }
 
 export const WorkspaceContext = createContext<WorkspaceContextValue>({
@@ -18,6 +19,7 @@ export const WorkspaceContext = createContext<WorkspaceContextValue>({
   currentUser: null,
   workspace: null,
   members: [],
+  channels: [],
 })
 
 export const useWorkspace = () => useContext(WorkspaceContext)

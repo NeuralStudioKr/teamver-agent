@@ -1,9 +1,9 @@
 'use client'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { usePathname, useRouter } from 'next/navigation'
-import { Hash, Plus, ChevronDown, ChevronRight, LogOut, UserX, HardDrive } from 'lucide-react'
-import { api, clearToken, getApiBase } from '@/lib/api'
+import { usePathname } from 'next/navigation'
+import { Hash, Plus, ChevronDown, ChevronRight, HardDrive, Sun, Moon } from 'lucide-react'
+import { api, getApiBase } from '@/lib/api'
 import { cn } from '@/lib/utils'
 
 interface SidebarProps {
@@ -14,19 +14,29 @@ interface SidebarProps {
   onChannelSelect: (id: string) => void
   currentUser: any
   onChannelsUpdate: (chs: any[]) => void
+  width?: number
 }
 
-export default function Sidebar({ workspace, channels, members, activeChannel, onChannelSelect, currentUser, onChannelsUpdate }: SidebarProps) {
+export default function Sidebar({ workspace, channels, members, activeChannel, onChannelSelect, currentUser, onChannelsUpdate, width }: SidebarProps) {
   const pathname = usePathname()
-  const router = useRouter()
   const [showChannels, setShowChannels] = useState(true)
   const [showDMs, setShowDMs] = useState(true)
   const [newCh, setNewCh] = useState('')
   const [showNewCh, setShowNewCh] = useState(false)
-  const [showDeleteModal, setShowDeleteModal] = useState(false)
-  const [deletePassword, setDeletePassword] = useState('')
-  const [deleteError, setDeleteError] = useState('')
-  const [deleting, setDeleting] = useState(false)
+  const [theme, setTheme] = useState<'light' | 'dark'>('dark')
+
+  useEffect(() => {
+    const current = document.documentElement.classList.contains('dark') ? 'dark' : 'light'
+    setTheme(current)
+  }, [])
+
+  const toggleTheme = () => {
+    const next = theme === 'dark' ? 'light' : 'dark'
+    setTheme(next)
+    if (next === 'dark') document.documentElement.classList.add('dark')
+    else document.documentElement.classList.remove('dark')
+    try { localStorage.setItem('ta_theme', next) } catch {}
+  }
 
   const addChannel = async () => {
     if (!newCh.trim()) return
@@ -39,26 +49,13 @@ export default function Sidebar({ workspace, channels, members, activeChannel, o
     } catch {}
   }
 
-  const logout = () => { clearToken(); router.push('/login') }
-
-  const handleDeleteAccount = async () => {
-    if (!deletePassword) { setDeleteError('비밀번호를 입력해주세요.'); return }
-    setDeleting(true); setDeleteError('')
-    try {
-      await api.deleteAccount(deletePassword)
-      clearToken()
-      router.push('/login')
-    } catch (e: any) {
-      setDeleteError(e.message || '탈퇴 실패')
-    } finally {
-      setDeleting(false)
-    }
-  }
-
   const primaryColor = workspace?.primaryColor || '#6366f1'
 
   return (
-    <div className="w-60 flex-shrink-0 flex flex-col h-full" style={{ background: 'hsl(var(--sidebar))' }}>
+    <div
+      className="flex-shrink-0 flex flex-col h-full"
+      style={{ background: 'hsl(var(--sidebar))', width: width ?? 240 }}
+    >
       {/* Header */}
       <div className="px-4 py-4 border-b border-border/50">
         <div className="flex items-center gap-2.5">
@@ -186,40 +183,14 @@ export default function Sidebar({ workspace, channels, members, activeChannel, o
           <div className="text-xs font-medium truncate">{currentUser?.name}</div>
           <div className="text-xs text-muted-foreground truncate">{currentUser?.role}</div>
         </div>
-        <button onClick={() => setShowDeleteModal(true)} title="회원탈퇴" className="text-muted-foreground hover:text-destructive p-1 rounded-md hover:bg-accent/50 transition-colors">
-          <UserX size={14} />
-        </button>
-        <button onClick={logout} title="로그아웃" className="text-muted-foreground hover:text-foreground p-1 rounded-md hover:bg-accent/50 transition-colors">
-          <LogOut size={14} />
+        <button
+          onClick={toggleTheme}
+          title={theme === 'dark' ? '라이트 모드' : '다크 모드'}
+          className="text-muted-foreground hover:text-foreground p-1.5 rounded-md hover:bg-accent/50 transition-colors"
+        >
+          {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
         </button>
       </div>
-
-      {/* 회원탈퇴 모달 */}
-      {showDeleteModal && (
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
-          <div className="bg-card border border-border rounded-xl p-6 w-full max-w-sm mx-4 shadow-xl">
-            <h3 className="text-base font-semibold mb-1">회원 탈퇴</h3>
-            <p className="text-sm text-muted-foreground mb-4">탈퇴 후 모든 데이터가 삭제됩니다. 비밀번호를 입력해 확인해주세요.</p>
-            {deleteError && <p className="text-destructive text-xs mb-3 p-2 bg-destructive/10 rounded">{deleteError}</p>}
-            <input
-              type="password" value={deletePassword}
-              onChange={e => setDeletePassword(e.target.value)}
-              placeholder="비밀번호 입력"
-              className="w-full bg-secondary border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-destructive mb-4"
-            />
-            <div className="flex gap-2">
-              <button onClick={() => { setShowDeleteModal(false); setDeletePassword(''); setDeleteError('') }}
-                className="flex-1 px-4 py-2 text-sm border border-border rounded-lg hover:bg-accent/50 transition-colors">
-                취소
-              </button>
-              <button onClick={handleDeleteAccount} disabled={deleting}
-                className="flex-1 px-4 py-2 text-sm bg-destructive text-destructive-foreground rounded-lg hover:bg-destructive/90 transition-colors disabled:opacity-50">
-                {deleting ? '처리 중...' : '탈퇴하기'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   )
 }
