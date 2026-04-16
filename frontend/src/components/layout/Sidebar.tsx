@@ -18,6 +18,12 @@ interface SidebarProps {
   width?: number
 }
 
+const BOT_ROLE_LABEL: Record<string, string> = {
+  '00000000-0000-0000-0000-000000000001': '조율자',
+  '00000000-0000-0000-0000-000000000002': '작성자',
+  '00000000-0000-0000-0000-000000000003': '검수자',
+}
+
 export default function Sidebar({ workspace, channels, members, activeChannel, onChannelSelect, currentUser, onChannelsUpdate, width }: SidebarProps) {
   const pathname = usePathname()
   const { socket } = useWorkspace()
@@ -275,7 +281,7 @@ export default function Sidebar({ workspace, channels, members, activeChannel, o
                     <div className="w-5 h-5 rounded-full bg-primary/20 flex items-center justify-center text-xs font-bold flex-shrink-0">
                       {member.name[0]}
                     </div>
-                    <span className="truncate">{member.name}</span>
+                    <span className="truncate">{member.name}{member.isBot && BOT_ROLE_LABEL[member.id] ? ` (${BOT_ROLE_LABEL[member.id]})` : ''}</span>
                     {member.isBot && <span className="text-xs text-muted-foreground ml-auto opacity-60">AI</span>}
                   </Link>
                 )
