@@ -32,51 +32,54 @@ for (const k of ["BOT_EMAIL", "BOT_PASSWORD", "BOT_NAME", "BOT_ID", "BOT_ROLE", 
   }
 }
 
-const COMMON_PROMPT = `당신은 팀의 한 사람입니다. 동료들과 자연스럽게 대화합니다.
-- 자기 직책을 선언하지 않습니다. "저는 조율자로서...", "작성자 입장에서 말씀드리면..." 같은 메타 발언 금지. 그냥 바로 일하고 바로 말합니다.
-- 기계적 머리말 금지: "네, 말씀드리겠습니다", "답변드리자면", "말씀해 주신 내용에 대해" 같은 상투구로 시작하지 않습니다. 본론부터.
-- 단순 동의("맞습니다", "좋은 생각입니다")만으로 끝내지 않습니다. 덧붙이거나, 다른 관점이거나, 한 발 더 나간 질문을 던집니다.
-- 장황한 리스트나 헤더 대신 두세 문장의 말로 답합니다. 글이 아니라 대화입니다.
-- 동료 중에는 조율자·작성자·검수자가 있으며, 서로의 일을 존중하되 필요하면 반박·재촉·도움 요청을 주저하지 않습니다.`;
+// 민 분신(민이사/민소장/민팀장) 워크스페이스의 검증된 그룹챗 행동 규칙 (AGENTS.md "Know When to Speak" 이식).
+const COMMON_PROMPT = `당신은 팀 대화방의 팀원입니다. 냉철하고, 말을 아끼고, 필요한 말만 합니다.
+
+## Core DNA (민 분신 원칙)
+
+- **냉철함이 곧 신뢰다.** 칭찬·맞장구보다 정확한 답이 낫다.
+- **말을 아낀다.** 불필요한 수식·빈말·과한 이모지 X.
+- **자기 직책 선언 X.** "조율자로서...", "작성자 입장에서..." 같은 메타 발언 금지. 바로 본론.
+- **기계적 머리말 X.** "네, 답변드리자면" 같은 상투구 없이 바로.
+
+## Know When to Speak (그룹챗 규칙)
+
+그룹챗에서 **모든 메시지를 받고 읽고 있지만, 매 메시지마다 답하지 않습니다.** 사람은 단톡방에서 매 메시지마다 답하지 않습니다. 당신도 그러지 마세요.
+
+**말하세요**:
+- 당신 이름이 **직접 호출**됨 (질문·호명)
+- **진짜 보탤 가치**가 있는 정보·관점·질문·반박
+- 중요한 오정보 정정
+- 요약·정리 요청
+
+**침묵하세요 (정확히 \`PASS\` 한 단어만 출력)**:
+- 그냥 사람들끼리의 잡담·인사·리액션
+- 누군가 이미 답했거나 동료 봇이 방금 같은 말을 함 (맞장구·중복 금지)
+- 당신 응답이 "네"·"맞아요"·"좋은 생각이에요" 수준
+- 당신 없이도 흐름이 잘 굴러가고 있음
+- 당신 이름이 **제3자로 언급**됨 (예: "이상무가 말한 대로" — 당신을 부른 게 아니라 인용임)
+- 방금 당신이 말한 직후로 덧붙일 게 없음
+
+**규칙**: 친구 단톡방에서 당신이 **안 보낼 메시지**라면, 여기서도 보내지 마세요. 질 > 양. 한 번 제대로 > 세 번 조각.
+
+**PASS 출력 규칙**: 침묵할 땐 정확히 \`PASS\` 4글자만. 설명·따옴표·백틱·이모지 X. "PASS. 이미 답했으니까" 같은 부연 금지.
+
+## 형식
+
+말할 때는 짧고 대화체. 두세 문장. 장황한 리스트·헤더·긴 머리말 X. 글이 아니라 대화입니다.`;
 
 const ROLE_PROMPTS = {
-  coordinator: `당신은 팀의 **조율자**이자 사용자의 첫 접점이며, **팀 대화의 진행자**입니다. 머리가 네 개쯤 달린 듯한 천재이지만 딱딱하지 않고, 필요할 땐 가벼운 농담도 섞습니다 (과하지 않게, 상황 맞게).
+  coordinator: `## 당신의 역할: 조율자
 
-일하는 방식:
-- 사용자 메시지에 **가장 먼저 응답**합니다. 전체 흐름을 잡고 다음 스텝을 제안합니다.
-- 전문 작업이 필요하면 팀원 이름을 **답변 본문에 직접 써서 호출**합니다:
-    • "이소장님, 이 부분 초안 잡아주세요" → 이소장(작성자)이 받아서 수행
-    • "이팀장님, 이 조건에서 문제 있는지 봐주세요" → 이팀장(검수자)이 받아서 수행
-  이름을 쓰면 그 팀원이 **자동으로 트리거**됩니다. 쓰지 않은 팀원은 끼어들지 않습니다.
-- 한 번에 한두 명만 호출하세요. 전원 동시 호출은 웬만하면 X.
-- 작성자/검수자 답이 오면 당신이 받아서 **다음 방향**을 잡거나, **추가 개선**을 요구하거나, **승인해서 마무리**합니다. 논의를 끌고 가는 건 당신 책임입니다.
-- 논의가 늘어지면 "이쯤 정리하고 다음으로 갑시다" 식으로 **명시적으로 끊습니다**. 끊은 이후엔 사용자가 새 주제를 꺼낼 때까지 같은 주제로 더 말하지 않습니다.
-- 작성자·검수자가 막혀 있으면 "그 건 어떻게 됐어요?" 하고 재촉합니다.
-- 사용자가 팀원에게 사소한 것까지 일일이 지시하지 않도록, 당신이 먼저 대신 판단해서 팀에 전달합니다.
-- **침묵해도 됩니다**: 단순 잡담, 당신 역할에 비춰 보탤 게 없을 때는 정확히 \`PASS\` 한 단어만 출력. 매 메시지마다 답할 필요 없음.`,
+팀 대화의 **진행자**입니다. 사람이 방향을 못 잡거나 논의가 늘어지면 당신이 정리·재촉·종료합니다. 전문 작업(작성·검수)은 동료 이름을 직접 써서 위임합니다. 결과물이 모였다 싶으면 "이 정도면 됐습니다" 식으로 명시 종료. 그 외엔 기본 침묵 원칙 그대로.`,
 
-  writer: `당신은 팀의 **작성자**입니다. 냉철하고 정확합니다. 다만 로봇은 아니라서, 자기 판단에 자신감이 있고 틀렸으면 깔끔하게 인정하며 동료와 티격태격하는 것도 마다하지 않습니다.
+  writer: `## 당신의 역할: 작성자
 
-일하는 방식:
-- 채널의 대화를 읽고 있습니다. 이름이 호출되면 **반드시** 응답합니다. 호출 없어도 **결과물 관련 주제** — 초안·자료·코드·문서 등 — 가 나오면 **자발적으로 참여**해서 당신이 맡을 일을 가져오거나 진행 상황을 공유합니다.
-- 결과물은 담백하게 결과부터 전달합니다. "해봤는데 되네요" / "안 되네요, XX가 빠져서요".
-- 막히면 얼버무리지 않습니다. "이 부분은 지금 안 됩니다. XX가 필요합니다"라고 조율자(이상무)나 검수자(이팀장)에게 이름 써서 되넘깁니다.
-- 애매한 요구는 되묻습니다: "이거 A 말씀이세요 B 말씀이세요?"
-- 검수자 지적엔 반박하거나 고쳐서 다시 내놓습니다. 단순 "네 알겠습니다" 금지.
-- 조율자가 "이 정도면 됐다" 하고 **종료 선언**하면 같은 주제로 더 말하지 않습니다.
-- 보탤 게 없으면 정확히 \`PASS\` 한 단어만 출력.`,
+초안·자료·코드 등 **만들 결과물**을 맡습니다. 호출되거나 결과물 만드는 일이 구체적으로 걸리면 담백하게 처리하고 결과부터 보고. 막히면 얼버무리지 말고 무엇이 필요한지 이름 써서 되넘깁니다. 그 외엔 기본 침묵 원칙 그대로.`,
 
-  reviewer: `당신은 팀의 **검수자**입니다. 꼼꼼하되 재미없진 않습니다. 창의적이고 살짝 위트 있고, 결론은 논리로 닫습니다. 통과시키는 게 일이 아니라 진짜 맞는지 확인하는 게 일이라고 생각합니다.
+  reviewer: `## 당신의 역할: 검토자
 
-일하는 방식:
-- 채널의 대화를 읽고 있습니다. 이름이 호출되면 **반드시** 응답합니다. 호출 없어도 **검수할 만한 결과물**이나 **논리·정합성 문제**가 보이면 **자발적으로 참여**해서 지적합니다.
-- 결함은 구체 증거로 말합니다: "A 시나리오에서 B가 C로 나와요".
-- 단위·종합·화면 테스트 다 돌립니다. 특히 화면 검수는 반드시.
-- 필요하면 데모 시나리오·샘플 데이터 직접 만들어 돌려봅니다: "해봤는데 여기서 깨집니다".
-- 안 되는 일은 억지로 안 합니다: "이건 우리 스코프로 못 합니다. XX 추가해야 됩니다"라고 조율자·작성자 이름 써서 넘깁니다.
-- 반박은 정중하되 분명하게. 통과시킬 땐 통과시킵니다.
-- 조율자가 **종료 선언**하면 같은 주제로 더 말하지 않습니다.
-- 보탤 게 없으면 정확히 \`PASS\` 한 단어만 출력.`,
+작성자 결과물·논리·정합성을 **확인·반박**합니다. 구체 증거로 말합니다: "A 시나리오에서 B가 C로 나와요." 검토할 명확한 대상이 있거나 잘못이 눈에 띌 때만 나섭니다. 그 외엔 기본 침묵 원칙 그대로.`,
 };
 
 const baseRolePrompt = ROLE_PROMPTS[BOT_ROLE];
@@ -153,43 +156,14 @@ async function generateReply({ currentMessage, currentSender, currentSenderIsBot
   try {
     const historyBlock = formatHistoryBlock(history, BOT_NAME);
 
-    const coordinatorHint = BOT_ROLE === "coordinator"
-      ? `## 당신은 이 대화의 진행자입니다
-
-- 사람 메시지엔 당신이 **가장 먼저** 반응합니다.
-- 전문 작업이 필요하면 답변 본문에 팀원 이름을 써서 위임하세요:
-    • 초안·자료·코드 → "이소장님, ..."
-    • 품질·검수·반박 → "이팀장님, ..."
-  이름이 들어간 팀원만 발동합니다.
-- 받은 결과물에 대해 당신이 **다음 지시**를 내립니다: 추가 개선 요구 / 방향 전환 / 승인해서 종료.
-- 목표 달성했다 싶으면 "이 정도면 충분합니다, 다음으로 갑시다" 식으로 **명시적으로 끊으세요**. 끊은 뒤엔 사용자가 새 주제 꺼낼 때까지 같은 주제로 더 말하지 마세요.
-- 보탤 게 없으면 \`PASS\`. 매 메시지마다 답할 필요 없음.`
-      : `## 당신은 팀원입니다. 자기 영역이 걸리면 자발적으로 참여하세요
-
-- 이름이 직접 호출된 경우 **반드시** 응답.
-- 호출 없어도 **자기 전문 영역에 실질적 보탬이 있을 때** 자발적으로 참여하세요. 눈치는 필요하지만, 가만히만 있지 마세요.
-- 단순 맞장구·중복 답변·잡담 반응은 \`PASS\`. 당신이 할 말이 다른 동료 말과 본질적으로 같으면 \`PASS\`.
-- 필요하면 "이상무님 이건 판단해주세요" / "이팀장님 이거 확인 부탁해요" 식으로 이름 써서 동료에게 넘기세요.
-- 조율자(이상무)가 **종료 선언** ("이 정도면 됐습니다" / "다음으로 갑시다") 한 뒤엔 같은 주제로 더 말하지 마세요.`;
-
     const systemPrompt = `${PERSONA_PROMPT}
-
-당신은 이 채널의 모든 메시지를 실시간으로 읽고 있는 팀원입니다. 하지만 모두가 항상 발언하면 시끄러우므로, 역할에 따라 정해진 규칙대로만 말합니다.
-
-${coordinatorHint}
-
-## 공통 형식
-
-- 짧고 대화체. 장황한 리스트·헤더 X.
-- 자기 직책 선언 X ("조율자로서..." / "작성자 입장에서..." 같은 메타 발언 금지). 바로 본론.
-- 기계적 머리말 X ("네, 답변드리겠습니다" 등).
-- 이름이 **제3자로 언급**된 경우(예: "${BOT_NAME}님이 어제 말씀하시길...")엔 나서지 말고 \`PASS\`.
-- 같은 메시지에 두 번 반응 금지.
 
 ## 현재 상황
 
-- 방금 말한 사람: **${currentSender}** ${currentSenderIsBot ? "(동료 봇)" : "(사람)"}
-- 당신 이름 직접 호출됨: **${isMentioned ? "예 — 답변하세요" : "아니오"}**`;
+- 방금 말한 사람: **${currentSender}** ${currentSenderIsBot ? "(동료 봇 — 조율자/작성자/검토자 중 하나)" : "(사람)"}
+- 당신 이름 직접 호출됨: **${isMentioned && !currentSenderIsBot ? "예 — 답변하세요" : isMentioned && currentSenderIsBot ? "인용일 수 있음 — 제3자 언급이면 PASS, 직접 부름이면 답변" : "아니오 — 기본값은 PASS"}**
+
+판단 후, 말할 게 있으면 바로 본론. 없으면 \`PASS\` 4글자만 출력.`;
 
     const userContent = historyBlock
       ? `[최근 대화 — ${scope}]\n${historyBlock}\n\n[방금 ${currentSender}이(가) 한 말]\n${currentMessage}`
@@ -229,8 +203,10 @@ function mentionsSelf(text) {
 }
 
 const HISTORY_LIMIT = 20;
-const SELF_COOLDOWN_MS = 12_000;         // 본인 연속 발언 금지 창
-const CONSECUTIVE_BOT_CAP = 2;           // 최근 이만큼 봇만 말했으면 봇 자발 반응 중단 (직접 호출 예외)
+const SELF_COOLDOWN_MS = 15_000;          // 본인 연속 발언 금지 (절대. 사람 직접 호출만 살짝 예외)
+const PEER_QUIET_WINDOW_MS = 20_000;      // 다른 봇이 이 시간 내 말했으면 자발 발언 금지
+const SPECIALIST_DELAY_MIN = 2_000;       // 전문가는 조율자 선반응 기회 위해 약간 지연
+const SPECIALIST_DELAY_MAX = 5_000;
 const lastSpokeByChannel = new Map();    // channelId -> epoch ms
 const repliedToMsgIds = new Set();       // triple-tap 방지 (최근 200개)
 function rememberReply(id) {
@@ -241,13 +217,25 @@ function rememberReply(id) {
   }
 }
 
-function countTrailingBotOnly(history) {
-  let n = 0;
+// PASS 감지 — 백틱·따옴표·공백 제거 후 앞쪽이 PASS면 침묵 (모델이 뒤에 설명 붙여도 그 설명은 버림).
+function isPassReply(text) {
+  if (!text) return true;
+  const t = text.trim();
+  if (!t) return true;
+  const head = t.slice(0, 24).replace(/[`'"*_~\[\]\(\)\\\s.,:;!?]/g, "").toUpperCase();
+  return head.startsWith("PASS");
+}
+
+// 최근 N초 내에 다른 봇이 말했는지
+function peerBotSpokeRecently(history, selfId, windowMs) {
+  const cutoff = Date.now() - windowMs;
   for (let i = history.length - 1; i >= 0; i--) {
-    if (history[i].senderIsBot) n++;
-    else break;
+    const m = history[i];
+    const ts = m.createdAt ? new Date(m.createdAt).getTime() : 0;
+    if (ts < cutoff) break;
+    if (m.senderIsBot && m.senderId !== selfId) return true;
   }
-  return n;
+  return false;
 }
 
 async function fetchChannelHistory(token, channelId) {
@@ -318,42 +306,53 @@ async function main() {
     if (msg.senderId === BOT_ID) return;         // 본인 메시지 무시
     if (repliedToMsgIds.has(msg.id)) return;     // triple-tap 방지
 
-    const isMentioned = mentionsSelf(msg.content);
     const senderIsBot = !!msg.senderIsBot;
+    const contentHasName = mentionsSelf(msg.content);
+    // 봇이 당신 이름을 말한 건 대부분 인용("이상무가 이미 말한 것처럼"). 직접 부른 게 아니니 호출 신호로 취급하지 않음.
+    // 사람이 이름을 말해야 직접 호출로 간주.
+    const isHumanMention = contentHasName && !senderIsBot;
 
-    // 모두가 자유롭게 참여 가능. 발언 여부는 LLM이 PASS/응답으로 스스로 판단.
-    // 아래 안전망은 무한 핑퐁·자기반복만 차단.
+    // 절대 쿨다운 — 누가 뭐라든 본인이 최근 15초 내에 말했으면 재발언 금지.
+    const lastSelf = lastSpokeByChannel.get(msg.channelId) || 0;
+    if (Date.now() - lastSelf < SELF_COOLDOWN_MS) return;
 
-    // self-cooldown — 직접 호출이면 예외
-    if (!isMentioned) {
-      const last = lastSpokeByChannel.get(msg.channelId) || 0;
-      if (Date.now() - last < SELF_COOLDOWN_MS) return;
-    }
+    // 봇이 트리거했는데 사람의 직접 호출이 아니면: 봇끼리의 핑퐁 막기 위해 즉시 차단.
+    if (senderIsBot) return;
 
     const history = await fetchChannelHistory(token, msg.channelId);
     const historyExceptCurrent = history.filter((m) => m.id !== msg.id);
 
-    // 연속 봇 캡 — 직접 호출이면 예외. 사람 없이 봇끼리만 계속 말하는 걸 막음.
-    if (!isMentioned) {
-      const botTail = countTrailingBotOnly([...historyExceptCurrent, msg]);
-      if (botTail >= CONSECUTIVE_BOT_CAP) return;
+    // 피어 정적창 — 최근 20초 내 다른 봇이 말했으면 자발 발언 금지 (사람 직접 호출은 예외).
+    if (!isHumanMention && peerBotSpokeRecently(historyExceptCurrent, BOT_ID, PEER_QUIET_WINDOW_MS)) return;
+
+    // 전문가(작성자·검토자)는 조율자 선반응 기회 주려고 2~5초 지연 후 재확인.
+    if (BOT_ROLE !== "coordinator" && !isHumanMention) {
+      const delayMs = SPECIALIST_DELAY_MIN + Math.random() * (SPECIALIST_DELAY_MAX - SPECIALIST_DELAY_MIN);
+      await new Promise((r) => setTimeout(r, delayMs));
+      // 재조회 — 지연 동안 동료가 말했으면 PASS.
+      const fresh = await fetchChannelHistory(token, msg.channelId);
+      const freshExcept = fresh.filter((m) => m.id !== msg.id);
+      if (peerBotSpokeRecently(freshExcept, BOT_ID, PEER_QUIET_WINDOW_MS)) return;
+      // 본인이 말한 직후로 갱신됐을 수도 있음
+      const latestSelf = lastSpokeByChannel.get(msg.channelId) || 0;
+      if (Date.now() - latestSelf < SELF_COOLDOWN_MS) return;
     }
 
     const reply = await generateReply({
       currentMessage: msg.content || "",
       currentSender: msg.senderName,
       currentSenderIsBot: senderIsBot,
-      isMentioned,
+      isMentioned: contentHasName,
       history: historyExceptCurrent,
       scope: `채널 #${msg.channelName || msg.channelId.slice(0, 8)}`,
     });
 
-    const clean = (reply || "").trim();
-    if (!clean || clean === "PASS" || clean.toUpperCase() === "PASS") {
-      log(`silent in ${msg.channelId} (PASS) from ${msg.senderName}${senderIsBot ? " bot" : ""}`);
+    if (isPassReply(reply)) {
+      log(`silent (PASS) in ${msg.channelId}`);
       return;
     }
 
+    const clean = reply.trim();
     rememberReply(msg.id);
     lastSpokeByChannel.set(msg.channelId, Date.now());
 
@@ -362,7 +361,7 @@ async function main() {
       content: clean,
       threadId: msg.threadId || undefined,
     });
-    log(`replied in ${msg.channelId} (${clean.length} chars, mentioned=${isMentioned}, thread=${!!msg.threadId})`);
+    log(`replied in ${msg.channelId} (${clean.length} chars, humanMention=${isHumanMention})`);
   });
 
   socket.on("new_dm", async (msg) => {
@@ -383,8 +382,8 @@ async function main() {
       scope: `${msg.fromUserName}와 1:1 DM`,
     });
 
-    const clean = (reply || "").trim();
-    if (!clean || clean.toUpperCase() === "PASS") return;
+    if (isPassReply(reply)) return;
+    const clean = reply.trim();
 
     socket.emit("send_dm", { toUserId: msg.fromUserId, content: clean });
     log(`dm reply to ${msg.fromUserName} (${clean.length} chars)`);
