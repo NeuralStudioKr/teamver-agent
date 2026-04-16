@@ -8,7 +8,7 @@ AI-powered team collaboration platform.
 - 🧵 Thread replies
 - 📎 File upload + image paste (Ctrl+V)
 - 🎨 Workspace branding (logo, colors)
-- 🤖 AI teammates (민이사, 민소장, 민팀장)
+- 🤖 AI teammates (이대표, 한이사, 이본부장)
 - 😄 Emoji reactions
 
 ## Tech Stack

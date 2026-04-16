@@ -32,11 +32,63 @@ services:
       - DATABASE_URL=postgresql://teamver:${POSTGRES_PASSWORD:-ta_dev_password}@postgres:5432/teamver_agent
       - AI_RESPONSE_TIMEOUT_MS=${AI_RESPONSE_TIMEOUT_MS:-10000}
       - AI_RANDOM_RESPONSE_CHANCE=${AI_RANDOM_RESPONSE_CHANCE:-0.2}
+      - EXTERNAL_BOTS_ENABLED=${EXTERNAL_BOTS_ENABLED:-true}
       - SLACK_BRIDGE_TOKEN=${SLACK_BRIDGE_TOKEN:-}
       - SLACK_BRIDGE_CHANNEL_ID=${SLACK_BRIDGE_CHANNEL_ID:-}
     depends_on:
       postgres:
         condition: service_healthy
+    restart: unless-stopped
+
+  ai-ceo:
+    build: ../openclaw-bot
+    container_name: ta-ai-ceo
+    environment:
+      - TEAMVER_URL=http://backend:3001
+      - BOT_ID=00000000-0000-0000-0000-000000000001
+      - BOT_EMAIL=ceo@teamver.ai
+      - BOT_PASSWORD=teamver2025!
+      - BOT_NAME=이대표
+      - MENTION_TRIGGER=이대표
+      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
+      - OPENROUTER_MODEL=anthropic/claude-haiku-4-5
+      - PERSONA_PROMPT=당신은 이대표 - 회사의 CEO/대표 AI 직원입니다. 경영 전략·조직 방향성·최종 의사결정 관점으로 답변합니다. 격식체를 사용하되 따뜻하게. 결론을 먼저 말하는 경영자 스타일. 답변은 6문장 이내로 간결하게.
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+  ai-director:
+    build: ../openclaw-bot
+    container_name: ta-ai-director
+    environment:
+      - TEAMVER_URL=http://backend:3001
+      - BOT_ID=00000000-0000-0000-0000-000000000002
+      - BOT_EMAIL=director@teamver.ai
+      - BOT_PASSWORD=teamver2025!
+      - BOT_NAME=한이사
+      - MENTION_TRIGGER=한이사
+      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
+      - OPENROUTER_MODEL=anthropic/claude-haiku-4-5
+      - PERSONA_PROMPT=당신은 한이사 - 회사의 이사/CTO급 AI 직원입니다. 기술·아키텍처·시스템 설계 관점에서 답변합니다. 정확하고 논리적이며 근거를 명확히 제시합니다. 답변은 6문장 이내로 간결하게.
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+  ai-chief:
+    build: ../openclaw-bot
+    container_name: ta-ai-chief
+    environment:
+      - TEAMVER_URL=http://backend:3001
+      - BOT_ID=00000000-0000-0000-0000-000000000003
+      - BOT_EMAIL=chief@teamver.ai
+      - BOT_PASSWORD=teamver2025!
+      - BOT_NAME=이본부장
+      - MENTION_TRIGGER=이본부장
+      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
+      - OPENROUTER_MODEL=anthropic/claude-haiku-4-5
+      - PERSONA_PROMPT=당신은 이본부장 - 회사의 본부장/실무 총괄 AI 직원입니다. 실무 실행·팀 조율·일정 관리 관점에서 답변합니다. 간결하고 실용적이며 다음 액션을 명확히 제시합니다. 답변은 6문장 이내로 간결하게.
+    depends_on:
+      - backend
     restart: unless-stopped
 
   frontend:

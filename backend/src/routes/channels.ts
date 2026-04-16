@@ -40,12 +40,12 @@ export async function channelRoutes(app: FastifyInstance) {
         io.to(channelId).emit('new_message', message)
       }
     }
-    // AI 자동 응답 (봇이름 언급 시)
-    if (!senderIsBot) {
+    // AI 자동 응답 (봇이름 언급 시) — 외부 openclaw-bot 컨테이너 사용 시 스킵
+    if (!senderIsBot && process.env.EXTERNAL_BOTS_ENABLED !== 'true') {
       const agents = [
-        { id: '00000000-0000-0000-0000-000000000001', name: '민이사' },
-        { id: '00000000-0000-0000-0000-000000000002', name: '민소장' },
-        { id: '00000000-0000-0000-0000-000000000003', name: '민팀장' },
+        { id: '00000000-0000-0000-0000-000000000001', name: '이대표' },
+        { id: '00000000-0000-0000-0000-000000000002', name: '한이사' },
+        { id: '00000000-0000-0000-0000-000000000003', name: '이본부장' },
       ]
       for (const agent of agents) {
         if (shouldAIRespond(agent.id, content || '', false)) {

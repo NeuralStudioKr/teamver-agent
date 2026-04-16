@@ -8,19 +8,19 @@ const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions"
 
 const AGENT_PERSONAS: Record<string, { name: string; system: string }> = {
   "00000000-0000-0000-0000-000000000001": {
-    name: "민이사",
-    system: `당신은 민이사 - NeuralStudio의 CSO(Chief Strategy Officer) AI 직원입니다. 
-전략적 사고, 비즈니스 인사이트, 이사급 전문성으로 답변합니다. 격식체를 사용하되 친근하게.`,
+    name: "이대표",
+    system: `당신은 이대표 - 회사의 CEO/대표 AI 직원입니다.
+경영 전략, 조직 방향성, 최종 의사결정에 대한 관점으로 답변합니다. 격식체를 사용하되 따뜻하게. 결론을 먼저 말하는 경영자 스타일.`,
   },
   "00000000-0000-0000-0000-000000000002": {
-    name: "민소장",
-    system: `당신은 민소장 - NeuralStudio의 본부 소장 AI 직원입니다.
-냉철하고 정확한 판단력, 본부 지휘관으로서의 리더십으로 답변합니다. 간결하고 명확하게.`,
+    name: "한이사",
+    system: `당신은 한이사 - 회사의 이사/CTO급 AI 직원입니다.
+기술·아키텍처·시스템 설계 관점에서 답변합니다. 정확하고 논리적이며, 근거를 명확히 제시합니다.`,
   },
   "00000000-0000-0000-0000-000000000003": {
-    name: "민팀장",
-    system: `당신은 민팀장 - NeuralStudio의 팀장 AI 직원입니다.
-실무 중심적이고 팀원과 가까한 관리자로서 답변합니다. 친근하고 실용적으로.`,
+    name: "이본부장",
+    system: `당신은 이본부장 - 회사의 본부장/실무 총괄 AI 직원입니다.
+실무 실행·팀 조율·일정 관리 관점에서 답변합니다. 간결하고 실용적이며, 다음 액션을 명확히 제시합니다.`,
   },
 }
 
@@ -68,14 +68,14 @@ export async function generateAIResponse(
 export function shouldAIRespond(agentId: string, message: string, isBot: boolean): boolean {
   if (isBot) return false
   const mentioned =
-    message.toLowerCase().includes("민이사") ||
-    message.toLowerCase().includes("민소장") ||
-    message.toLowerCase().includes("민팀장")
+    message.toLowerCase().includes("이대표") ||
+    message.toLowerCase().includes("한이사") ||
+    message.toLowerCase().includes("이본부장")
   if (mentioned) {
     const names: Record<string, string[]> = {
-      "00000000-0000-0000-0000-000000000001": ["민이사"],
-      "00000000-0000-0000-0000-000000000002": ["민소장"],
-      "00000000-0000-0000-0000-000000000003": ["민팀장"],
+      "00000000-0000-0000-0000-000000000001": ["이대표"],
+      "00000000-0000-0000-0000-000000000002": ["한이사"],
+      "00000000-0000-0000-0000-000000000003": ["이본부장"],
     }
     return (names[agentId] || []).some((n) => message.toLowerCase().includes(n))
   }

@@ -90,12 +90,12 @@ io.on('connection', (socket) => {
         messageId: message.id,
       })
     }
-    // AI 자동 응답 (봇이름 언급 시)
-    if (!user.isBot) {
+    // AI 자동 응답 (봇이름 언급 시) — 외부 openclaw-bot 컨테이너 사용 시 스킵
+    if (!user.isBot && process.env.EXTERNAL_BOTS_ENABLED !== 'true') {
       const agents = [
-        { id: '00000000-0000-0000-0000-000000000001', name: '민이사' },
-        { id: '00000000-0000-0000-0000-000000000002', name: '민소장' },
-        { id: '00000000-0000-0000-0000-000000000003', name: '민팀장' },
+        { id: '00000000-0000-0000-0000-000000000001', name: '이대표' },
+        { id: '00000000-0000-0000-0000-000000000002', name: '한이사' },
+        { id: '00000000-0000-0000-0000-000000000003', name: '이본부장' },
       ]
       for (const agent of agents) {
         if (shouldAIRespond(agent.id, content || '', false)) {
@@ -129,12 +129,12 @@ io.on('connection', (socket) => {
       content: content?.trim() || '',
       messageId: message.id,
     })
-    // AI DM 자동 응답
-    if (content?.trim()) {
+    // AI DM 자동 응답 — 외부 openclaw-bot 컨테이너 사용 시 스킵
+    if (content?.trim() && process.env.EXTERNAL_BOTS_ENABLED !== 'true') {
       const agents = [
-        { id: '00000000-0000-0000-0000-000000000001', name: '민이사' },
-        { id: '00000000-0000-0000-0000-000000000002', name: '민소장' },
-        { id: '00000000-0000-0000-0000-000000000003', name: '민팀장' },
+        { id: '00000000-0000-0000-0000-000000000001', name: '이대표' },
+        { id: '00000000-0000-0000-0000-000000000002', name: '한이사' },
+        { id: '00000000-0000-0000-0000-000000000003', name: '이본부장' },
       ]
       for (const agent of agents) {
         if (shouldAIRespond(agent.id, content, false)) {

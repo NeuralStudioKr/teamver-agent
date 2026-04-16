@@ -95,36 +95,34 @@ export default function DmPage() {
             <p>{partner?.name}님과 첫 대화를 시작해보세요!</p>
           </div>
         )}
-        {messages.map(msg => {
-          const isMe = msg.fromUserId === currentUser?.id
-          return (
-            <div key={msg.id} className={`flex items-end gap-2 ${isMe ? 'justify-end' : 'justify-start'}`}>
-              {!isMe && (
-                <div className="w-7 h-7 rounded-full bg-primary/30 flex items-center justify-center text-xs font-bold text-primary flex-shrink-0">
-                  {msg.fromUserName[0]}
-                </div>
-              )}
-              <div className={`max-w-sm flex flex-col gap-0.5 ${isMe ? 'items-end' : 'items-start'}`}>
-                {!isMe && <span className="text-xs text-muted-foreground px-1">{msg.fromUserName}</span>}
-                {msg.fileUrl && msg.fileUrl.match(/\.(jpg|jpeg|png|gif|webp)/i) ? (
-                  <img src={`${getApiBase()}${msg.fileUrl}`} className="rounded-lg max-w-xs border border-border" alt={msg.fileName} />
-                ) : msg.fileUrl ? (
-                  <a href={`${getApiBase()}${msg.fileUrl}`} target="_blank" className="flex items-center gap-2 bg-accent rounded-lg px-3 py-2 text-sm hover:bg-accent/80">
-                    <Paperclip size={14} />{msg.fileName}
-                  </a>
-                ) : null}
-                {msg.content && (
-                  <div className={`px-3 py-2 rounded-2xl text-sm ${isMe ? 'bg-primary text-primary-foreground rounded-br-sm' : 'bg-accent rounded-bl-sm'}`}>
-                    {msg.content}
-                  </div>
+        {messages.map(msg => (
+          <div key={msg.id} className="flex items-start gap-3 group">
+            <div className="w-9 h-9 rounded-md bg-primary/30 flex items-center justify-center text-sm font-bold text-primary flex-shrink-0 mt-0.5">
+              {msg.fromUserName?.[0] ?? '?'}
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-baseline gap-2">
+                <span className="font-semibold text-sm">{msg.fromUserName}</span>
+                {msg.fromUserIsBot && (
+                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-primary/20 text-primary font-semibold">AI</span>
                 )}
-                <span className="text-xs text-muted-foreground px-1">
+                <span className="text-xs text-muted-foreground">
                   {format(new Date(msg.createdAt), 'HH:mm', { locale: ko })}
                 </span>
               </div>
+              {msg.fileUrl && msg.fileUrl.match(/\.(jpg|jpeg|png|gif|webp)/i) ? (
+                <img src={`${getApiBase()}${msg.fileUrl}`} className="rounded-lg max-w-md border border-border mt-1" alt={msg.fileName} />
+              ) : msg.fileUrl ? (
+                <a href={`${getApiBase()}${msg.fileUrl}`} target="_blank" className="inline-flex items-center gap-2 bg-accent rounded-lg px-3 py-2 text-sm hover:bg-accent/80 mt-1">
+                  <Paperclip size={14} />{msg.fileName}
+                </a>
+              ) : null}
+              {msg.content && (
+                <div className="text-sm whitespace-pre-wrap break-words mt-0.5">{msg.content}</div>
+              )}
             </div>
-          )
-        })}
+          </div>
+        ))}
         {isTyping && (
           <div className="flex items-center gap-2">
             <div className="w-7 h-7 rounded-full bg-primary/30 flex items-center justify-center text-xs">{partner?.name?.[0]}</div>

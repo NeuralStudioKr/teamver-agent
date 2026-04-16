@@ -114,9 +114,9 @@ export async function initDB() {
     const botPassword = await bcrypt.hash('teamver2025!', 10)
     await client.query(`
       INSERT INTO users (id, workspace_id, name, email, password_hash, role, is_bot) VALUES
-        ('00000000-0000-0000-0000-000000000001', $1, '민이사', 'min-cso@teamver.ai', $2, 'CSO', true),
-        ('00000000-0000-0000-0000-000000000002', $1, '민소장', 'min-director@teamver.ai', $2, '소장', true),
-        ('00000000-0000-0000-0000-000000000003', $1, '민팀장', 'min-manager@teamver.ai', $2, '팀장', true)
+        ('00000000-0000-0000-0000-000000000001', $1, '이대표', 'ceo@teamver.ai', $2, '대표', true),
+        ('00000000-0000-0000-0000-000000000002', $1, '한이사', 'director@teamver.ai', $2, '이사', true),
+        ('00000000-0000-0000-0000-000000000003', $1, '이본부장', 'chief@teamver.ai', $2, '본부장', true)
       ON CONFLICT (workspace_id, email) DO UPDATE SET password_hash=$2
     `, [wsId, botPassword])
 
