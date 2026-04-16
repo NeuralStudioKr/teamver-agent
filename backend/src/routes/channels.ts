@@ -9,10 +9,19 @@ export async function channelRoutes(app: FastifyInstance) {
   })
 
   app.post('/channels', { onRequest: [app.authenticate] }, async (req, reply) => {
-    const { workspaceId } = (req as any).user
+    const { workspaceId, id: creatorId } = (req as any).user
     const { name, description } = req.body as any
     if (!name) return reply.status(400).send({ error: '채널 이름 필요' })
-    return store.createChannel(workspaceId, name, description)
+    const channel = await store.createChannel(workspaceId, name, description)
+    // 창작자 + 워크스페이스 모든 봇 자동 membership
+    await store.addChannelMember(channel.id, creatorId)
+    const members = await store.getMembers(workspaceId)
+    for (const m of members) {
+      if (m.isBot) await store.addChannelMember(channel.id, m.id)
+    }
+    const io = (app as any).io
+    if (io) io.to(`ws:${workspaceId}`).emit('channel_created', channel)
+    return channel
   })
 
   app.patch('/channels/:channelId', { onRequest: [app.authenticate] }, async (req, reply) => {
@@ -24,7 +33,7 @@ export async function channelRoutes(app: FastifyInstance) {
     const channel = await store.renameChannel(channelId, workspaceId, trimmed)
     if (!channel) return reply.status(404).send({ error: '채널을 찾을 수 없습니다' })
     const io = (app as any).io
-    if (io) io.to(channelId).emit('channel_updated', channel)
+    if (io) io.to(`ws:${workspaceId}`).emit('channel_updated', channel)
     return channel
   })
 
@@ -34,7 +43,7 @@ export async function channelRoutes(app: FastifyInstance) {
     const ok = await store.deleteChannel(channelId, workspaceId)
     if (!ok) return reply.status(404).send({ error: '채널을 찾을 수 없습니다' })
     const io = (app as any).io
-    if (io) io.to(channelId).emit('channel_deleted', { channelId })
+    if (io) io.to(`ws:${workspaceId}`).emit('channel_deleted', { channelId })
     return { ok: true }
   })
 

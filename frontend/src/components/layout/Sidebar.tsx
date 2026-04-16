@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation'
 import { Hash, Plus, ChevronDown, ChevronRight, HardDrive, Sun, Moon, MoreVertical, Pencil, Trash2 } from 'lucide-react'
 import { api, getApiBase } from '@/lib/api'
 import { cn } from '@/lib/utils'
+import { useWorkspace } from '@/lib/WorkspaceContext'
 
 interface SidebarProps {
   workspace: any
@@ -19,6 +20,7 @@ interface SidebarProps {
 
 export default function Sidebar({ workspace, channels, members, activeChannel, onChannelSelect, currentUser, onChannelsUpdate, width }: SidebarProps) {
   const pathname = usePathname()
+  const { socket } = useWorkspace()
   const [showChannels, setShowChannels] = useState(true)
   const [showDMs, setShowDMs] = useState(true)
   const [newCh, setNewCh] = useState('')
@@ -58,6 +60,8 @@ export default function Sidebar({ workspace, channels, members, activeChannel, o
     try {
       const ch = await api.createChannel(newCh.trim())
       onChannelsUpdate([...channels, ch])
+      // 즉시 socket room 조인 — 새 채널에서 본인 메시지가 실시간으로 보이도록
+      if (socket) socket.emit('join_channel', ch.id)
       onChannelSelect(ch.id)
       setNewCh('')
       setShowNewCh(false)

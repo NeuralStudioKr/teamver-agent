@@ -233,7 +233,10 @@ export default function ChatArea({ channelId, socket, currentUser, apiBase }: Ch
               {channelMembers.map(m => (
                 <div key={m.id} className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-accent/40">
                   <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center text-xs font-bold flex-shrink-0">{m.name[0]}</div>
-                  <span className="text-sm flex-1 truncate">{m.name}</span>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm truncate">{m.name}</div>
+                    {m.email && <div className="text-[11px] text-muted-foreground truncate">{m.email}</div>}
+                  </div>
                   {m.isBot && <span className="text-xs text-muted-foreground opacity-60">AI</span>}
                 </div>
               ))}
@@ -258,7 +261,10 @@ export default function ChatArea({ channelId, socket, currentUser, apiBase }: Ch
                   className="flex items-center gap-2 w-full px-2 py-1.5 rounded-lg hover:bg-accent/40 text-left"
                 >
                   <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center text-xs font-bold flex-shrink-0">{m.name[0]}</div>
-                  <span className="text-sm flex-1 truncate">{m.name}</span>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm truncate">{m.name}</div>
+                    {m.email && <div className="text-[11px] text-muted-foreground truncate">{m.email}</div>}
+                  </div>
                   {m.isBot && <span className="text-xs text-muted-foreground opacity-60">AI</span>}
                 </button>
               ))}

@@ -55,6 +55,10 @@ export default function WorkspaceLayout({ children }: { children: React.ReactNod
 
   useEffect(() => {
     if (!socket) return
+    const onCreated = (ch: any) => {
+      setChannels(prev => prev.find(c => c.id === ch.id) ? prev : [...prev, ch])
+      socket.emit('join_channel', ch.id)
+    }
     const onUpdated = (ch: any) => {
       setChannels(prev => prev.map(c => c.id === ch.id ? { ...c, ...ch } : c))
     }
@@ -65,9 +69,11 @@ export default function WorkspaceLayout({ children }: { children: React.ReactNod
         return next
       })
     }
+    socket.on('channel_created', onCreated)
     socket.on('channel_updated', onUpdated)
     socket.on('channel_deleted', onDeleted)
     return () => {
+      socket.off('channel_created', onCreated)
       socket.off('channel_updated', onUpdated)
       socket.off('channel_deleted', onDeleted)
     }
