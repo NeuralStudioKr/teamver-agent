@@ -47,6 +47,10 @@ export const api = {
   getChannels: () => request<any[]>('/channels'),
   createChannel: (name: string, description?: string) =>
     request<any>('/channels', { method: 'POST', body: JSON.stringify({ name, description }) }),
+  renameChannel: (channelId: string, name: string) =>
+    request<any>(`/channels/${channelId}`, { method: 'PATCH', body: JSON.stringify({ name }) }),
+  deleteChannel: (channelId: string) =>
+    request<any>(`/channels/${channelId}`, { method: 'DELETE' }),
   getMessages: (channelId: string) => request<any[]>(`/channels/${channelId}/messages`),
   getChannelMembers: (channelId: string) => request<any[]>(`/channels/${channelId}/members`),
   inviteChannelMember: (channelId: string, userId: string) =>

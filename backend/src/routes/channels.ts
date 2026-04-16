@@ -15,6 +15,29 @@ export async function channelRoutes(app: FastifyInstance) {
     return store.createChannel(workspaceId, name, description)
   })
 
+  app.patch('/channels/:channelId', { onRequest: [app.authenticate] }, async (req, reply) => {
+    const { workspaceId } = (req as any).user
+    const { channelId } = req.params as any
+    const { name } = req.body as any
+    const trimmed = typeof name === 'string' ? name.trim() : ''
+    if (!trimmed) return reply.status(400).send({ error: '채널 이름 필요' })
+    const channel = await store.renameChannel(channelId, workspaceId, trimmed)
+    if (!channel) return reply.status(404).send({ error: '채널을 찾을 수 없습니다' })
+    const io = (app as any).io
+    if (io) io.to(channelId).emit('channel_updated', channel)
+    return channel
+  })
+
+  app.delete('/channels/:channelId', { onRequest: [app.authenticate] }, async (req, reply) => {
+    const { workspaceId } = (req as any).user
+    const { channelId } = req.params as any
+    const ok = await store.deleteChannel(channelId, workspaceId)
+    if (!ok) return reply.status(404).send({ error: '채널을 찾을 수 없습니다' })
+    const io = (app as any).io
+    if (io) io.to(channelId).emit('channel_deleted', { channelId })
+    return { ok: true }
+  })
+
   app.get('/channels/:channelId/messages', { onRequest: [app.authenticate] }, async (req) => {
     const { channelId } = req.params as any
     return store.getMessages(channelId)

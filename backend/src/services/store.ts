@@ -102,6 +102,22 @@ class Store {
     return this.toChannel(rows[0])
   }
 
+  async renameChannel(channelId: string, workspaceId: string, name: string): Promise<Channel | null> {
+    const { rows } = await pool.query(
+      `UPDATE channels SET name=$1 WHERE id=$2 AND workspace_id=$3 RETURNING *`,
+      [name, channelId, workspaceId]
+    )
+    return rows[0] ? this.toChannel(rows[0]) : null
+  }
+
+  async deleteChannel(channelId: string, workspaceId: string): Promise<boolean> {
+    const { rowCount } = await pool.query(
+      `DELETE FROM channels WHERE id=$1 AND workspace_id=$2`,
+      [channelId, workspaceId]
+    )
+    return (rowCount ?? 0) > 0
+  }
+
   // === Messages ===
   async getMessages(channelId: string, limit = 50): Promise<Message[]> {
     const { rows } = await pool.query(

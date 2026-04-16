@@ -53,6 +53,26 @@ export default function WorkspaceLayout({ children }: { children: React.ReactNod
     router.push('/workspace')
   }, [router])
 
+  useEffect(() => {
+    if (!socket) return
+    const onUpdated = (ch: any) => {
+      setChannels(prev => prev.map(c => c.id === ch.id ? { ...c, ...ch } : c))
+    }
+    const onDeleted = ({ channelId }: { channelId: string }) => {
+      setChannels(prev => {
+        const next = prev.filter(c => c.id !== channelId)
+        setActiveChannel(curr => curr === channelId ? (next[0]?.id || '') : curr)
+        return next
+      })
+    }
+    socket.on('channel_updated', onUpdated)
+    socket.on('channel_deleted', onDeleted)
+    return () => {
+      socket.off('channel_updated', onUpdated)
+      socket.off('channel_deleted', onDeleted)
+    }
+  }, [socket])
+
   const onResizeStart = useCallback((e: React.MouseEvent) => {
     e.preventDefault()
     resizingRef.current = true
