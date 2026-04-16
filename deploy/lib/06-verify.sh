@@ -61,19 +61,25 @@ else
   exit 1
 fi
 
+DOMAIN_SUFFIX=$(jq -r '.mail_server.domain // "teamver.online"' "$CUSTOMER_JSON")
+FRONT_DOMAIN="${CID}.${DOMAIN_SUFFIX}"
+API_DOMAIN="api.${CID}.${DOMAIN_SUFFIX}"
+
 cat <<SUMMARY
 
 ✅ 배포 완료: $WS_NAME ($CID)
 
-  Frontend: http://${VPS_IP}:${FRONTEND_PORT}
-  Backend:  http://${VPS_IP}:${BACKEND_PORT}
+  Frontend (공용 URL):   https://${FRONT_DOMAIN}
+  Backend  (공용 URL):   https://${API_DOMAIN}
+  Frontend (직접 IP):    http://${VPS_IP}:${FRONTEND_PORT}
+  Backend  (직접 IP):    http://${VPS_IP}:${BACKEND_PORT}
 
   AI 직원 3명 온라인:
     • $C_NAME (조율자)
     • $W_NAME (작성자)
     • $R_NAME (검수자)
 
-  첫 가입자가 admin 권한을 가집니다. 고객에게 URL을 전달하세요.
+  첫 가입자가 admin 권한을 가집니다. 고객에게 https://${FRONT_DOMAIN} 을 전달하세요.
 
 SUMMARY
 echo "✅ 06-verify PASS"

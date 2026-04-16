@@ -45,6 +45,10 @@ FRONTEND_PORT=$(j '.ports.frontend // 3100')
 MAIL_ENABLED=$(j '.mail_server.enabled // false')
 MAIL_DOMAIN=$(j '.mail_server.domain // "teamver.online"')
 
+# NEXT_PUBLIC_API_URL — Caddy가 api.{id}.{domain}으로 HTTPS 프록시 예정.
+# 07-caddy.sh가 동일 변수 조합을 사용하므로 일관성 유지.
+API_URL="https://api.${CID}.${MAIL_DOMAIN}"
+
 # AI 3명 — email 완성 (local + @domain)
 c_name=$(j '.ai_employees.coordinator.name')
 c_title=$(j '.ai_employees.coordinator.title')
@@ -97,6 +101,7 @@ sed -i \
   -e "s|__REVIEWER_CUSTOM_PROMPT__|$(esc "$r_cust")|" \
   -e "s|__VPS_IP__|$(esc "$VPS_IP")|" \
   -e "s|__BACKEND_PORT__|$(esc "$BACKEND_PORT")|" \
+  -e "s|__API_URL__|$(esc "$API_URL")|" \
   "$OUT"
 
 chmod 600 "$OUT"

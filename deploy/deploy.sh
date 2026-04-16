@@ -37,12 +37,14 @@ echo " staging: $STAGING_DIR"
 echo "================================================"
 
 STEPS=(
+  "00-dns"
   "01-validate"
   "02-remote-prep"
   "03-render-configs"
   "04-mailboxes"
   "05-upload-and-up"
   "06-verify"
+  "07-caddy"
 )
 
 for step in "${STEPS[@]}"; do

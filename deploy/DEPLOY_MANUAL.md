@@ -172,19 +172,26 @@ CUSTOMER_JSON=/tmp/teamstack-deploy/acme.json bash deploy/lib/01-validate.sh
 
 ```bash
 cd /path/to/teamver-agent
+
+# Porkbun API 키 export (SECRETS.local.md §3.3). 없으면 DNS 스텝 자동 skip.
+export PORKBUN_API_KEY="pk1_..."
+export PORKBUN_API_SECRET="sk1_..."
+
 ./deploy/deploy.sh /tmp/teamstack-deploy/acme.json
 ```
 
-예상 소요 시간: **5~15분**. 단계별 소요:
+예상 소요 시간: **8~18분**. 단계별 소요:
 
 | 스텝 | 내용 | 시간 |
 |---|---|---|
+| 00-dns | Porkbun A 레코드 2개(`{id}.teamver.online`, `api.{id}.teamver.online`) 생성/동기화 + 전파 대기 | 5~30초 |
 | 01-validate | 입력·툴·SSH 도달성 확인 | 10초 |
-| 02-remote-prep | VPS에 docker·git 등 apt install | 1~3분 (첫 배포만) |
+| 02-remote-prep | VPS에 docker·git 등 (template 1121 VPS는 docker 선설치) | 10초 ~ 3분 |
 | 03-render-configs | 로컬에서 .env 렌더링 + 시크릿 생성 | 1초 |
 | 04-mailboxes | mail-01에 3 메일박스 생성 | 10~30초 |
 | 05-upload-and-up | rsync + docker compose up --build | 3~8분 (이미지 빌드) |
-| 06-verify | 헬스체크 + 3 봇 online 확인 | 20~60초 |
+| 06-verify | 헬스체크 + 3 봇 online + DB seed 확인 | 20~60초 |
+| 07-caddy | Caddy 설치 + Caddyfile + reload + HTTPS 발급 확인 | 10초 ~ 2분 (첫 TLS) |
 
 ## 6. 성공 시 보고 포맷
 
@@ -193,16 +200,20 @@ cd /path/to/teamver-agent
 ```
 ✅ 배포 완료: Acme Corp (acme)
 
-  Frontend: http://<VPS_IP>:3100
-  Backend:  http://<VPS_IP>:3101
+  Frontend (공용 URL):   https://acme.teamver.online
+  Backend  (공용 URL):   https://api.acme.teamver.online
+  Frontend (직접 IP):    http://<VPS_IP>:3100
+  Backend  (직접 IP):    http://<VPS_IP>:3101
 
   AI 직원 3명 온라인:
     • 김상무 (조율자)
     • 김부장 (작성자)
     • 김과장 (검수자)
 
-  첫 가입자가 admin 권한을 가집니다. 고객에게 URL을 전달하세요.
+  첫 가입자가 admin 권한을 가집니다. 고객에게 https://acme.teamver.online 을 전달하세요.
 ```
+
+공용 URL은 Caddy가 80/443 리버스 프록시 + Let's Encrypt TLS 자동 발급. 직접 IP:port 는 fallback/디버그용.
 
 추가로 판매자에게 알릴 것:
 - 고객에게 안내할 첫 접속 URL (frontend)
@@ -288,12 +299,13 @@ apt 저장소가 어쩌다 일시 다운됐을 수 있음. 1~2분 후 재시도.
 
 ## 12. 다음 버전에서 추가될 것
 
-- Caddy 리버스 프록시 + 자동 TLS
-- Porkbun API로 DNS A 레코드 자동 생성 (현재 수동: `SECRETS.local.md §3.3` 참조해서 curl)
+- ~~Caddy 리버스 프록시 + 자동 TLS~~ ✅ **v1.1 (07-caddy.sh) 추가됨**
+- ~~Porkbun API로 DNS A 레코드 자동 생성~~ ✅ **v1.1 (00-dns.sh) 추가됨**
 - Shadow 에이전트 자동 기동 (감시·Slack ops)
 - 백업 자동화 (일일 pg_dump)
 - 롤링 업데이트 스크립트
 - `hostnamectl set-hostname <intended>` 자동 설정 (포맷 직후 VPS는 `srv1588xxx`로 초기화됨)
+- `ports.frontend/backend`를 docker network 내부로만 바인딩(Caddy만 외부 노출) — 보안 강화
 
 ---
 
@@ -309,19 +321,22 @@ apt 저장소가 어쩌다 일시 다운됐을 수 있음. 1~2분 후 재시도.
 
 세 버그 모두 수정 후 재실행하면 모든 스텝 멱등 통과. E2E 멘션 응답 확인.
 
-### DNS 수동 절차 (v1.0 임시)
+### v1.1 추가 (2026-04-16, cso 배포 직후)
 
-deploy.sh 실행 **전**에 판매자가 Porkbun API로 A 레코드 생성:
-```bash
-PORKBUN_KEY="..."    # SECRETS.local.md §3.3
-PORKBUN_SEC="..."
-curl -X POST https://api.porkbun.com/api/json/v3/dns/create/teamver.online \
-  -H "Content-Type: application/json" \
-  -d '{"apikey":"'$PORKBUN_KEY'","secretapikey":"'$PORKBUN_SEC'","name":"<subdomain>","type":"A","content":"<VPS_IP>","ttl":"600"}'
-```
-전파 확인: `dig +short A <subdomain>.teamver.online @1.1.1.1` — 통상 5초 이내.
+사용자 피드백 `cso.teamver.online:3100` → 포트 없이 `cso.teamver.online` 으로 접속 원함. 두 스텝 신설로 완전 자동화:
 
-(v1.1에서 `deploy/lib/00-dns.sh` 로 자동화 예정)
+**00-dns.sh** — Porkbun API로 서브도메인 2개 자동 A 레코드:
+- `{id}.teamver.online` → VPS IP (프런트)
+- `api.{id}.teamver.online` → VPS IP (백엔드)
+- env `PORKBUN_API_KEY` / `PORKBUN_API_SECRET` 없으면 스킵 (판매자 수동 모드).
+
+**07-caddy.sh** — 원격 VPS에 Caddy 설치·Caddyfile 배치·reload. Let's Encrypt 자동 TLS 발급. 80→443 auto-redirect.
+
+**03-render-configs.sh** — `NEXT_PUBLIC_API_URL` 을 `https://api.{id}.teamver.online` 로 렌더. 프런트가 빌드 시점부터 HTTPS API URL을 참조.
+
+결과: 판매자가 고객에게 전달하는 URL은 **`https://{id}.teamver.online`** 한 줄. 포트·IP 노출 없음. TLS 기본.
+
+구현 후 동일 cso 타겟에 재실행 — 8 스텝 모두 PASS, 00은 "이미 동일"로 skip, 07은 "Caddy 이미 설치" + reload만 수행. 멱등성 확인.
 
 ---
 
