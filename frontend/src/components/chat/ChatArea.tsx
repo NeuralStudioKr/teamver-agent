@@ -371,7 +371,7 @@ export default function ChatArea({ channelId, socket, currentUser, apiBase }: Ch
           <div className="flex items-end gap-2 bg-secondary border border-border rounded-xl px-4 py-2.5 focus-within:border-ring/50">
             <label className="text-muted-foreground hover:text-foreground cursor-pointer p-0.5">
               <Paperclip size={16} />
-              <input type="file" className="hidden" onChange={handleFileSelect} accept="image/*,.pdf,.doc,.docx,.txt" />
+              <input type="file" className="hidden" onChange={handleFileSelect} accept="*/*" />
             </label>
             <textarea
               className="flex-1 bg-transparent text-sm placeholder:text-muted-foreground outline-none resize-none max-h-32 min-h-[24px]"
