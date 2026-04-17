@@ -201,7 +201,7 @@ export default function DrivePanel() {
               {uploading ? <span className="text-xs">...</span> : <Upload size={14} />}
             </button>
             <input ref={fileInputRef} type="file" className="hidden" onChange={handleUpload}
-              accept=".md,.txt,.pdf,.png,.jpg,.jpeg,.gif,.webp,.json,.csv" />
+              accept="*/*" />
           </div>
         </div>
 
