@@ -119,20 +119,20 @@ export async function initDB() {
     `)
 
     // === 고객사별 설정 (env로 주입, 없으면 개발 기본값) ===
-    const WS_NAME = process.env.WORKSPACE_NAME || 'NeuralStudio'
+    const WS_NAME = process.env.WORKSPACE_NAME || 'workspace'
     const WS_SLUG = (process.env.WORKSPACE_SLUG || 'default').toLowerCase()
 
-    const COORDINATOR_NAME   = process.env.AI_COORDINATOR_NAME   || '이대표'
-    const COORDINATOR_EMAIL  = process.env.AI_COORDINATOR_EMAIL  || 'ceo@teamver.ai'
-    const COORDINATOR_TITLE  = process.env.AI_COORDINATOR_TITLE  || '대표'
+    const COORDINATOR_NAME   = process.env.AI_COORDINATOR_NAME   || '조율자'
+    const COORDINATOR_EMAIL  = process.env.AI_COORDINATOR_EMAIL  || 'coordinator@example.local'
+    const COORDINATOR_TITLE  = process.env.AI_COORDINATOR_TITLE  || '조율자'
 
-    const WRITER_NAME        = process.env.AI_WRITER_NAME        || '한이사'
-    const WRITER_EMAIL       = process.env.AI_WRITER_EMAIL       || 'director@teamver.ai'
-    const WRITER_TITLE       = process.env.AI_WRITER_TITLE       || '이사'
+    const WRITER_NAME        = process.env.AI_WRITER_NAME        || '작성자'
+    const WRITER_EMAIL       = process.env.AI_WRITER_EMAIL       || 'writer@example.local'
+    const WRITER_TITLE       = process.env.AI_WRITER_TITLE       || '작성자'
 
-    const REVIEWER_NAME      = process.env.AI_REVIEWER_NAME      || '이본부장'
-    const REVIEWER_EMAIL     = process.env.AI_REVIEWER_EMAIL     || 'chief@teamver.ai'
-    const REVIEWER_TITLE     = process.env.AI_REVIEWER_TITLE     || '본부장'
+    const REVIEWER_NAME      = process.env.AI_REVIEWER_NAME      || '검토자'
+    const REVIEWER_EMAIL     = process.env.AI_REVIEWER_EMAIL     || 'reviewer@example.local'
+    const REVIEWER_TITLE     = process.env.AI_REVIEWER_TITLE     || '검토자'
 
     const BOT_PASSWORD_PLAIN = process.env.BOT_PASSWORD
     if (!BOT_PASSWORD_PLAIN) {

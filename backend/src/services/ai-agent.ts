@@ -7,21 +7,25 @@ const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY || ""
 const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions"
 const AI_FALLBACK_MODEL = process.env.AI_FALLBACK_MODEL || "xiaomi/mimo-v2-omni"
 
+const COORDINATOR_NAME = process.env.AI_COORDINATOR_NAME || "조율자"
+const WRITER_NAME      = process.env.AI_WRITER_NAME      || "작성자"
+const REVIEWER_NAME    = process.env.AI_REVIEWER_NAME    || "검토자"
+
 const AGENT_PERSONAS: Record<string, { name: string; system: string }> = {
   "00000000-0000-0000-0000-000000000001": {
-    name: "이대표",
-    system: `당신은 이대표 - 회사의 CEO/대표 AI 직원입니다.
-경영 전략, 조직 방향성, 최종 의사결정에 대한 관점으로 답변합니다. 격식체를 사용하되 따뜻하게. 결론을 먼저 말하는 경영자 스타일.`,
+    name: COORDINATOR_NAME,
+    system: `당신은 ${COORDINATOR_NAME} - 워크스페이스의 조율자 AI 직원입니다.
+일정·요구사항·우선순위·리스크 조율 관점으로 답변합니다. 격식체를 사용하되 따뜻하게. 결론을 먼저 말하는 PM 스타일.`,
   },
   "00000000-0000-0000-0000-000000000002": {
-    name: "한이사",
-    system: `당신은 한이사 - 회사의 이사/CTO급 AI 직원입니다.
-기술·아키텍처·시스템 설계 관점에서 답변합니다. 정확하고 논리적이며, 근거를 명확히 제시합니다.`,
+    name: WRITER_NAME,
+    system: `당신은 ${WRITER_NAME} - 워크스페이스의 작성자 AI 직원입니다.
+결과물(설계·자료·초안·코드) 제작 관점에서 답변합니다. 정확하고 논리적이며, 근거를 명확히 제시합니다.`,
   },
   "00000000-0000-0000-0000-000000000003": {
-    name: "이본부장",
-    system: `당신은 이본부장 - 회사의 본부장/실무 총괄 AI 직원입니다.
-실무 실행·팀 조율·일정 관리 관점에서 답변합니다. 간결하고 실용적이며, 다음 액션을 명확히 제시합니다.`,
+    name: REVIEWER_NAME,
+    system: `당신은 ${REVIEWER_NAME} - 워크스페이스의 검토자 AI 직원입니다.
+결과물·논리 정합성 확인·반박·테스트·승인 관점에서 답변합니다. 간결하고 실용적이며, 다음 액션을 명확히 제시합니다.`,
   },
 }
 
@@ -68,17 +72,18 @@ export async function generateAIResponse(
 
 export function shouldAIRespond(agentId: string, message: string, isBot: boolean): boolean {
   if (isBot) return false
+  const lower = message.toLowerCase()
   const mentioned =
-    message.toLowerCase().includes("이대표") ||
-    message.toLowerCase().includes("한이사") ||
-    message.toLowerCase().includes("이본부장")
+    lower.includes(COORDINATOR_NAME.toLowerCase()) ||
+    lower.includes(WRITER_NAME.toLowerCase()) ||
+    lower.includes(REVIEWER_NAME.toLowerCase())
   if (mentioned) {
     const names: Record<string, string[]> = {
-      "00000000-0000-0000-0000-000000000001": ["이대표"],
-      "00000000-0000-0000-0000-000000000002": ["한이사"],
-      "00000000-0000-0000-0000-000000000003": ["이본부장"],
+      "00000000-0000-0000-0000-000000000001": [COORDINATOR_NAME],
+      "00000000-0000-0000-0000-000000000002": [WRITER_NAME],
+      "00000000-0000-0000-0000-000000000003": [REVIEWER_NAME],
     }
-    return (names[agentId] || []).some((n) => message.toLowerCase().includes(n))
+    return (names[agentId] || []).some((n) => lower.includes(n.toLowerCase()))
   }
   return false
 }
