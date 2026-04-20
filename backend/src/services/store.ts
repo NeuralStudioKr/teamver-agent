@@ -233,16 +233,6 @@ class Store {
     return { id: rows[0].id, fromUserId: rows[0].from_user_id, toUserId: rows[0].to_user_id, fromUserName: rows[0].from_user_name, fromUserIsBot: rows[0].from_user_is_bot, content: rows[0].content, fileUrl: rows[0].file_url, fileName: rows[0].file_name, isRead: rows[0].is_read, createdAt: rows[0].created_at }
   }
 
-  async updateDmMessage(messageId: string, fromUserId: string, content: string): Promise<any | null> {
-    const { rows } = await pool.query(
-      `UPDATE dm_messages SET content=$1 WHERE id=$2 AND from_user_id=$3 RETURNING *`,
-      [content, messageId, fromUserId]
-    )
-    if (!rows[0]) return null
-    const r = rows[0]
-    return { id: r.id, fromUserId: r.from_user_id, toUserId: r.to_user_id, fromUserName: r.from_user_name, fromUserIsBot: r.from_user_is_bot, content: r.content, fileUrl: r.file_url, fileName: r.file_name, isRead: r.is_read, createdAt: r.created_at }
-  }
-
   // === Helpers ===
   private toUser(r: any): User {
     return { id: r.id, workspaceId: r.workspace_id, name: r.name, email: r.email, passwordHash: r.password_hash, role: r.role, avatarUrl: r.avatar_url, isBot: r.is_bot, createdAt: r.created_at }

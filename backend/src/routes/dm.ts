@@ -27,21 +27,4 @@ export async function dmRoutes(app: FastifyInstance) {
     }
     return message
   })
-
-  // DM 메시지 수정 — 봇이 플레이스홀더("작성 중…")를 최종 응답으로 덮어쓸 때 사용.
-  app.patch('/dm/:userId/messages/:messageId', { onRequest: [app.authenticate] }, async (req, reply) => {
-    const { id: currentUserId } = (req as any).user
-    const { userId, messageId } = req.params as any
-    const { content } = req.body as any
-    const trimmed = typeof content === 'string' ? content.trim() : ''
-    if (!trimmed) return reply.status(400).send({ error: '내용 필요' })
-    const updated = await store.updateDmMessage(messageId, currentUserId, trimmed)
-    if (!updated) return reply.status(404).send({ error: '메시지를 찾을 수 없거나 수정 권한 없음' })
-    const io = (app as any).io
-    if (io) {
-      io.to(`dm:${userId}`).emit('dm_updated', updated)
-      io.to(`dm:${currentUserId}`).emit('dm_updated', updated)
-    }
-    return updated
-  })
 }

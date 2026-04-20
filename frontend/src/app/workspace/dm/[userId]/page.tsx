@@ -36,23 +36,12 @@ export default function DmPage() {
         setMessages(prev => prev.find(m => m.id === msg.id) ? prev : [...prev, msg])
       }
     }
-    const handleDmUpdated = (msg: any) => {
-      if ((msg.fromUserId === userId && msg.toUserId === currentUser?.id) ||
-          (msg.fromUserId === currentUser?.id && msg.toUserId === userId)) {
-        setMessages(prev => prev.map(m => m.id === msg.id ? { ...m, ...msg } : m))
-      }
-    }
     const handleTyping = ({ userId: tuid, isTyping: t }: any) => {
       if (tuid === userId) { setIsTyping(t); if (t) setTimeout(() => setIsTyping(false), 3000) }
     }
     socket.on('new_dm', handleDm)
-    socket.on('dm_updated', handleDmUpdated)
     socket.on('dm_user_typing', handleTyping)
-    return () => {
-      socket.off('new_dm', handleDm)
-      socket.off('dm_updated', handleDmUpdated)
-      socket.off('dm_user_typing', handleTyping)
-    }
+    return () => { socket.off('new_dm', handleDm); socket.off('dm_user_typing', handleTyping) }
   }, [socket, userId, currentUser])
 
   const send = () => {
