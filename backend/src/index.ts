@@ -10,11 +10,8 @@ import { dmRoutes } from './routes/dm.js'
 import { workspaceRoutes } from './routes/workspace.js'
 import { fileRoutes } from './routes/files.js'
 import { driveRoutes } from './routes/drive.js'
-import { notifyNewMessage, notifyNewDm } from './services/webhook.js'
 import { store } from './services/store.js'
 import { initDB } from './services/db.js'
-// AI 자동 응답 비활성화 — OpenClaw 인스턴스가 직접 로그인해서 메시지 전송
-import { generateAIResponse, shouldAIRespond } from './services/ai-agent.js'
 import path from 'path'
 
 const JWT_SECRET = process.env.JWT_SECRET
@@ -75,44 +72,6 @@ io.on('connection', (socket) => {
     } else {
       io.to(channelId).emit('new_message', message)
     }
-
-    // OpenClaw 웹훅 알림 (봇 제외 메시지만)
-    if (!user.isBot) {
-      const channels = await store.getChannels(user.workspaceId)
-      const ch = channels.find((c: any) => c.id === channelId)
-      notifyNewMessage({
-        channelId,
-        channelName: ch?.name || channelId,
-        senderId: user.id,
-        senderName: user.name,
-        senderIsBot: user.isBot,
-        content: content || '',
-        messageId: message.id,
-      })
-    }
-    // AI 자동 응답 (봇이름 언급 시) — 외부 openclaw-bot 컨테이너 사용 시 스킵
-    if (!user.isBot && process.env.EXTERNAL_BOTS_ENABLED !== 'true') {
-      const agents = [
-        { id: '00000000-0000-0000-0000-000000000001', name: process.env.AI_COORDINATOR_NAME || '조율자' },
-        { id: '00000000-0000-0000-0000-000000000002', name: process.env.AI_WRITER_NAME || '작성자' },
-        { id: '00000000-0000-0000-0000-000000000003', name: process.env.AI_REVIEWER_NAME || '검토자' },
-      ]
-      for (const agent of agents) {
-        if (shouldAIRespond(agent.id, content || '', false)) {
-          const aiText = await generateAIResponse(agent.id, '', content || '', user.name)
-          if (aiText) {
-            const aiMsg = await store.addMessage({
-              channelId,
-              senderId: agent.id,
-              senderName: agent.name,
-              senderIsBot: true,
-              content: aiText,
-            })
-            io.to(channelId).emit('new_message', aiMsg)
-          }
-        }
-      }
-    }
   })
 
   socket.on('send_dm', async ({ toUserId, content, fileUrl, fileName }: any) => {
@@ -120,32 +79,6 @@ io.on('connection', (socket) => {
     const message = await store.createDmMessage(user.workspaceId, user.id, toUserId, content.trim(), fileUrl, fileName)
     io.to(`dm:${toUserId}`).emit('new_dm', message)
     socket.emit('new_dm', message)
-
-    // OpenClaw 웹훅 알림 (DM)
-    notifyNewDm({
-      fromUserId: user.id,
-      fromUserName: user.name,
-      toUserId,
-      content: content?.trim() || '',
-      messageId: message.id,
-    })
-    // AI DM 자동 응답 — 외부 openclaw-bot 컨테이너 사용 시 스킵
-    if (content?.trim() && process.env.EXTERNAL_BOTS_ENABLED !== 'true') {
-      const agents = [
-        { id: '00000000-0000-0000-0000-000000000001', name: process.env.AI_COORDINATOR_NAME || '조율자' },
-        { id: '00000000-0000-0000-0000-000000000002', name: process.env.AI_WRITER_NAME || '작성자' },
-        { id: '00000000-0000-0000-0000-000000000003', name: process.env.AI_REVIEWER_NAME || '검토자' },
-      ]
-      for (const agent of agents) {
-        if (shouldAIRespond(agent.id, content, false)) {
-          const aiText = await generateAIResponse(agent.id, '', content, user.name)
-          if (aiText) {
-            const aiMsg = await store.createDmMessage(user.workspaceId, agent.id, user.id, aiText)
-            io.to(`dm:${user.id}`).emit('new_dm', aiMsg)
-          }
-        }
-      }
-    }
   })
 
   socket.on('typing', ({ channelId, isTyping }: any) => {

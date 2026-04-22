@@ -31,7 +31,30 @@ AI 직원 3명(조율자·작성자·검토자)의 배포는 별도 레포에서
 | DB | PostgreSQL 16 |
 | Realtime | Socket.IO |
 | Frontend | Next.js 14 + React 18 + Tailwind + Radix UI |
-| AI 연동 | `EXTERNAL_BOTS_ENABLED=true` → OpenClaw 봇이 REST/SIO로 연결 |
+| AI 연동 | OpenClaw 봇이 REST API + Socket.IO로 연결 |
+
+## 아키텍처
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                     teamver-agent-app                        │
+├─────────────────────────────────────────────────────────────┤
+│  Frontend (Next.js)  ←→  Backend (Fastify + Socket.IO)     │
+│                             ↓                               │
+│                        PostgreSQL                           │
+└─────────────────────────────────────────────────────────────┘
+                              ↑
+                    REST API + Socket.IO
+                              ↑
+┌─────────────────────────────────────────────────────────────┐
+│              OpenClaw 봇 (teamver-agent-deploy)              │
+├─────────────────────────────────────────────────────────────┤
+│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐         │
+│  │ coordinator │  │   writer    │  │  reviewer   │         │
+│  │  (조율자)    │  │  (작성자)    │  │  (검토자)    │         │
+│  └─────────────┘  └─────────────┘  └─────────────┘         │
+└─────────────────────────────────────────────────────────────┘
+```
 
 ## 단독 실행 (개발용)
 
@@ -39,7 +62,7 @@ AI 봇 없이 채팅 UI만 띄우기:
 
 ```bash
 cp .env.example .env
-# .env 편집: JWT_SECRET, POSTGRES_PASSWORD, OPENROUTER_API_KEY
+# .env 편집: JWT_SECRET, POSTGRES_PASSWORD
 docker compose up -d postgres backend frontend
 ```
 
@@ -76,6 +99,7 @@ OpenClaw 플러그인 구현체: [teamver-agent-deploy/openclaw/plugin](https://
 |------|------|
 | **teamver-agent-app** (이 레포) | 채팅 서버 + 웹 UI |
 | [teamver-agent-deploy](https://github.com/NeuralStudioKr/teamver-agent-deploy) | 배포 자동화 + AI 직원 3명 템플릿 + OpenClaw 플러그인 |
+| [teamver-agent-opt](https://github.com/NeuralStudioKr/teamver-agent-opt) | 관리 콘솔 + 고객사 관리 |
 
 ## 상태
 

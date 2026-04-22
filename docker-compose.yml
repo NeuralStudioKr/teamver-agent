@@ -30,12 +30,7 @@ services:
     environment:
       - PORT=3001
       - JWT_SECRET=${JWT_SECRET}
-      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
-      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
       - DATABASE_URL=postgresql://teamver:${POSTGRES_PASSWORD:-ta_dev_password}@postgres:5432/teamver_agent
-      - AI_RESPONSE_TIMEOUT_MS=${AI_RESPONSE_TIMEOUT_MS:-10000}
-      - AI_RANDOM_RESPONSE_CHANCE=${AI_RANDOM_RESPONSE_CHANCE:-0}
-      - EXTERNAL_BOTS_ENABLED=${EXTERNAL_BOTS_ENABLED:-true}
       # --- 고객사 식별 (DB seed가 사용) ---
       - WORKSPACE_NAME=${WORKSPACE_NAME:-workspace}
       - WORKSPACE_SLUG=${WORKSPACE_SLUG:-default}
@@ -50,81 +45,9 @@ services:
       - AI_REVIEWER_NAME=${AI_REVIEWER_NAME:-검토자}
       - AI_REVIEWER_EMAIL=${AI_REVIEWER_EMAIL:-reviewer@example.local}
       - AI_REVIEWER_TITLE=${AI_REVIEWER_TITLE:-검토자}
-      - SLACK_BRIDGE_TOKEN=${SLACK_BRIDGE_TOKEN:-}
-      - SLACK_BRIDGE_CHANNEL_ID=${SLACK_BRIDGE_CHANNEL_ID:-}
     depends_on:
       postgres:
         condition: service_healthy
-    restart: unless-stopped
-
-  # === AI 직원 3명 ===
-  # 슬롯: coordinator(조율자) / writer(작성자) / reviewer(검수자)
-  # 각 슬롯 UUID는 고정. 사람-정체성(이름·직함·이메일)·모델·맞춤 프롬프트는 .env로 주입.
-
-  ai-coordinator:
-    build: ./openclaw-bot
-    container_name: ta-ai-coordinator
-    environment:
-      - TEAMVER_URL=http://backend:3001
-      - BOT_ID=00000000-0000-0000-0000-000000000001
-      - BOT_ROLE=coordinator
-      - BOT_EMAIL=${AI_COORDINATOR_EMAIL:-coordinator@example.local}
-      - BOT_PASSWORD=${BOT_PASSWORD:?BOT_PASSWORD must be set in .env}
-      - BOT_NAME=${AI_COORDINATOR_NAME:-조율자}
-      - BOT_TITLE=${AI_COORDINATOR_TITLE:-조율자}
-      - MENTION_TRIGGER=${AI_COORDINATOR_NAME:-조율자}
-      - TEAM_COORDINATOR_NAME=${AI_COORDINATOR_NAME:-조율자}
-      - TEAM_WRITER_NAME=${AI_WRITER_NAME:-작성자}
-      - TEAM_REVIEWER_NAME=${AI_REVIEWER_NAME:-검토자}
-      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
-      - OPENROUTER_MODEL=${AI_COORDINATOR_MODEL:-xiaomi/mimo-v2-omni}
-      - BOT_CUSTOM_PROMPT=${AI_COORDINATOR_CUSTOM_PROMPT:-}
-    depends_on:
-      - backend
-    restart: unless-stopped
-
-  ai-writer:
-    build: ./openclaw-bot
-    container_name: ta-ai-writer
-    environment:
-      - TEAMVER_URL=http://backend:3001
-      - BOT_ID=00000000-0000-0000-0000-000000000002
-      - BOT_ROLE=writer
-      - BOT_EMAIL=${AI_WRITER_EMAIL:-writer@example.local}
-      - BOT_PASSWORD=${BOT_PASSWORD:?BOT_PASSWORD must be set in .env}
-      - BOT_NAME=${AI_WRITER_NAME:-작성자}
-      - BOT_TITLE=${AI_WRITER_TITLE:-작성자}
-      - MENTION_TRIGGER=${AI_WRITER_NAME:-작성자}
-      - TEAM_COORDINATOR_NAME=${AI_COORDINATOR_NAME:-조율자}
-      - TEAM_WRITER_NAME=${AI_WRITER_NAME:-작성자}
-      - TEAM_REVIEWER_NAME=${AI_REVIEWER_NAME:-검토자}
-      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
-      - OPENROUTER_MODEL=${AI_WRITER_MODEL:-xiaomi/mimo-v2-omni}
-      - BOT_CUSTOM_PROMPT=${AI_WRITER_CUSTOM_PROMPT:-}
-    depends_on:
-      - backend
-    restart: unless-stopped
-
-  ai-reviewer:
-    build: ./openclaw-bot
-    container_name: ta-ai-reviewer
-    environment:
-      - TEAMVER_URL=http://backend:3001
-      - BOT_ID=00000000-0000-0000-0000-000000000003
-      - BOT_ROLE=reviewer
-      - BOT_EMAIL=${AI_REVIEWER_EMAIL:-reviewer@example.local}
-      - BOT_PASSWORD=${BOT_PASSWORD:?BOT_PASSWORD must be set in .env}
-      - BOT_NAME=${AI_REVIEWER_NAME:-검토자}
-      - BOT_TITLE=${AI_REVIEWER_TITLE:-검토자}
-      - MENTION_TRIGGER=${AI_REVIEWER_NAME:-검토자}
-      - TEAM_COORDINATOR_NAME=${AI_COORDINATOR_NAME:-조율자}
-      - TEAM_WRITER_NAME=${AI_WRITER_NAME:-작성자}
-      - TEAM_REVIEWER_NAME=${AI_REVIEWER_NAME:-검토자}
-      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
-      - OPENROUTER_MODEL=${AI_REVIEWER_MODEL:-xiaomi/mimo-v2-omni}
-      - BOT_CUSTOM_PROMPT=${AI_REVIEWER_CUSTOM_PROMPT:-}
-    depends_on:
-      - backend
     restart: unless-stopped
 
   frontend:
