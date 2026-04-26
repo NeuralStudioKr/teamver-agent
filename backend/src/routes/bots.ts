@@ -19,7 +19,7 @@ function execDocker(args: string[]): Promise<{ stdout: string; stderr: string; c
 }
 
 export async function botRoutes(app: FastifyInstance) {
-  app.post('/api/bots/:botId/pause', { onRequest: [(app as any).authenticate] }, async (req: any, reply: any) => {
+  app.post('/bots/:botId/pause', { onRequest: [(app as any).authenticate] }, async (req: any, reply: any) => {
     const { botId } = req.params as { botId: string }
     const containerName = BOT_CONTAINERS[botId]
 
@@ -37,7 +37,7 @@ export async function botRoutes(app: FastifyInstance) {
     return { ok: true, status: 'paused' }
   })
 
-  app.post('/api/bots/:botId/restart', { onRequest: [(app as any).authenticate] }, async (req: any, reply: any) => {
+  app.post('/bots/:botId/restart', { onRequest: [(app as any).authenticate] }, async (req: any, reply: any) => {
     const { botId } = req.params as { botId: string }
     const containerName = BOT_CONTAINERS[botId]
 
@@ -55,7 +55,7 @@ export async function botRoutes(app: FastifyInstance) {
     return { ok: true, status: 'running' }
   })
 
-  app.get('/api/bots/:botId/status', { onRequest: [(app as any).authenticate] }, async (req: any, reply: any) => {
+  app.get('/bots/:botId/status', { onRequest: [(app as any).authenticate] }, async (req: any, reply: any) => {
     const { botId } = req.params as { botId: string }
     const containerName = BOT_CONTAINERS[botId]
 
