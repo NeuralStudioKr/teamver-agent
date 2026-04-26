@@ -306,11 +306,11 @@ export default function Sidebar({ workspace, channels, members, activeChannel, o
                 const isBot = member.isBot
                 const botStatus = botStatuses[member.id] || 'running'
                 return (
-                  <div key={member.id} className="group relative">
+                  <div key={member.id} className="group relative flex items-center">
                     <Link
                       href={`/workspace/dm/${member.id}`}
                       className={cn(
-                        'flex items-center gap-2 w-full px-3 py-1.5 rounded-md text-sm transition-colors',
+                        'flex items-center gap-2 flex-1 min-w-0 px-3 py-1.5 rounded-md text-sm transition-colors',
                         isDmActive ? 'bg-primary/20 text-primary font-medium' : 'text-muted-foreground hover:bg-accent/50 hover:text-foreground'
                       )}
                     >
@@ -320,10 +320,10 @@ export default function Sidebar({ workspace, channels, members, activeChannel, o
                       )}>
                         {member.name[0]}
                       </div>
-                      <span className="truncate flex-1">{member.name}{isBot && BOT_ROLE_LABEL[member.id] ? ` (${BOT_ROLE_LABEL[member.id]})` : ''}</span>
+                      <span className="truncate">{member.name}{isBot && BOT_ROLE_LABEL[member.id] ? ` (${BOT_ROLE_LABEL[member.id]})` : ''}</span>
                       {isBot && (
                         <span className={cn(
-                          "text-xs flex-shrink-0",
+                          "text-xs flex-shrink-0 ml-auto",
                           botStatus === 'paused' ? 'text-destructive' : 'text-muted-foreground opacity-60'
                         )}>
                           {botStatus === 'paused' ? '중지' : 'AI'}
@@ -335,7 +335,7 @@ export default function Sidebar({ workspace, channels, members, activeChannel, o
                         onClick={(e) => { e.stopPropagation(); setMenuForBot(menuForBot === member.id ? null : member.id) }}
                         title="봇 옵션"
                         className={cn(
-                          'absolute right-7 top-1/2 -translate-y-1/2 flex-shrink-0 p-0.5 rounded hover:bg-accent/70 transition-opacity',
+                          'flex-shrink-0 p-1 rounded hover:bg-accent/70 transition-opacity mr-1',
                           menuForBot === member.id ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
                         )}
                       >
@@ -345,7 +345,7 @@ export default function Sidebar({ workspace, channels, members, activeChannel, o
                     {menuForBot === member.id && (
                       <div
                         ref={botMenuRef}
-                        className="absolute right-1 top-full mt-1 z-30 min-w-[140px] bg-card border border-border rounded-lg shadow-lg py-1"
+                        className="absolute right-0 top-full mt-1 z-30 min-w-[140px] bg-card border border-border rounded-lg shadow-lg py-1"
                       >
                         {botStatus === 'running' ? (
                           <button
