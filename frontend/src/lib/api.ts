@@ -56,6 +56,12 @@ export const api = {
   inviteChannelMember: (channelId: string, userId: string) =>
     request<any>(`/channels/${channelId}/members`, { method: 'POST', body: JSON.stringify({ userId }) }),
   getMembers: () => request<any[]>('/members'),
+  pauseBot: (botId: string) =>
+    request<any>(`/bots/${botId}/pause`, { method: 'POST' }),
+  restartBot: (botId: string) =>
+    request<any>(`/bots/${botId}/restart`, { method: 'POST' }),
+  getBotStatus: (botId: string) =>
+    request<{ status: 'running' | 'paused' }>(`/bots/${botId}/status`),
 
   updateMessage: (channelId: string, messageId: string, content: string) =>
     request<any>(`/channels/${channelId}/messages/${messageId}`, { method: 'PATCH', body: JSON.stringify({ content }) }),

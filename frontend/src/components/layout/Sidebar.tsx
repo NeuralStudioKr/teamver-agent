@@ -2,7 +2,7 @@
 import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Hash, Plus, ChevronDown, ChevronRight, HardDrive, Sun, Moon, MoreVertical, Pencil, Trash2 } from 'lucide-react'
+import { Hash, Plus, ChevronDown, ChevronRight, HardDrive, Sun, Moon, MoreVertical, Pencil, Trash2, Pause, Play, RefreshCw } from 'lucide-react'
 import { api, getApiBase } from '@/lib/api'
 import { cn } from '@/lib/utils'
 import { useWorkspace } from '@/lib/WorkspaceContext'
@@ -37,16 +37,20 @@ export default function Sidebar({ workspace, channels, members, activeChannel, o
   const [renameDraft, setRenameDraft] = useState('')
   const [deleteForCh, setDeleteForCh] = useState<any | null>(null)
   const [busy, setBusy] = useState(false)
+  const [menuForBot, setMenuForBot] = useState<string | null>(null)
+  const [botStatuses, setBotStatuses] = useState<Record<string, 'running' | 'paused'>>({})
   const menuRef = useRef<HTMLDivElement>(null)
+  const botMenuRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    if (!menuForCh) return
+    if (!menuForCh && !menuForBot) return
     const onClick = (e: MouseEvent) => {
       if (menuRef.current && !menuRef.current.contains(e.target as Node)) setMenuForCh(null)
+      if (botMenuRef.current && !botMenuRef.current.contains(e.target as Node)) setMenuForBot(null)
     }
     document.addEventListener('mousedown', onClick)
     return () => document.removeEventListener('mousedown', onClick)
-  }, [menuForCh])
+  }, [menuForCh, menuForBot])
 
   useEffect(() => {
     const current = document.documentElement.classList.contains('dark') ? 'dark' : 'light'
@@ -111,6 +115,36 @@ export default function Sidebar({ workspace, channels, members, activeChannel, o
     } finally {
       setBusy(false)
       setDeleteForCh(null)
+    }
+  }
+
+  const pauseBot = async (botId: string, botName: string) => {
+    setMenuForBot(null)
+    if (!confirm(`${botName} 봇을 일시중지하시겠습니까?`)) return
+    setBusy(true)
+    try {
+      await api.pauseBot(botId)
+      setBotStatuses(prev => ({ ...prev, [botId]: 'paused' }))
+      alert(`${botName} 봇이 일시중지되었습니다.`)
+    } catch (e: any) {
+      alert(e?.message || '일시중지 실패')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const restartBot = async (botId: string, botName: string) => {
+    setMenuForBot(null)
+    if (!confirm(`${botName} 봇을 재시작하시겠습니까?`)) return
+    setBusy(true)
+    try {
+      await api.restartBot(botId)
+      setBotStatuses(prev => ({ ...prev, [botId]: 'running' }))
+      alert(`${botName} 봇이 재시작되었습니다.`)
+    } catch (e: any) {
+      alert(e?.message || '재시작 실패')
+    } finally {
+      setBusy(false)
     }
   }
 
@@ -269,21 +303,79 @@ export default function Sidebar({ workspace, channels, members, activeChannel, o
             <div className="mt-1 space-y-0.5">
               {members.filter(m => m.id !== currentUser?.id).map(member => {
                 const isDmActive = pathname === `/workspace/dm/${member.id}`
+                const isBot = member.isBot
+                const botStatus = botStatuses[member.id] || 'running'
                 return (
-                  <Link
-                    key={member.id}
-                    href={`/workspace/dm/${member.id}`}
-                    className={cn(
-                      'flex items-center gap-2 w-full px-3 py-1.5 rounded-md text-sm transition-colors',
-                      isDmActive ? 'bg-primary/20 text-primary font-medium' : 'text-muted-foreground hover:bg-accent/50 hover:text-foreground'
+                  <div key={member.id} className="group relative">
+                    <Link
+                      href={`/workspace/dm/${member.id}`}
+                      className={cn(
+                        'flex items-center gap-2 w-full px-3 py-1.5 rounded-md text-sm transition-colors',
+                        isDmActive ? 'bg-primary/20 text-primary font-medium' : 'text-muted-foreground hover:bg-accent/50 hover:text-foreground'
+                      )}
+                    >
+                      <div className={cn(
+                        "w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0",
+                        botStatus === 'paused' ? 'bg-destructive/20' : 'bg-primary/20'
+                      )}>
+                        {member.name[0]}
+                      </div>
+                      <span className="truncate">{member.name}{isBot && BOT_ROLE_LABEL[member.id] ? ` (${BOT_ROLE_LABEL[member.id]})` : ''}</span>
+                      {isBot && (
+                        <span className={cn(
+                          "text-xs ml-auto",
+                          botStatus === 'paused' ? 'text-destructive' : 'text-muted-foreground opacity-60'
+                        )}>
+                          {botStatus === 'paused' ? '중지' : 'AI'}
+                        </span>
+                      )}
+                    </Link>
+                    {isBot && (
+                      <>
+                        <button
+                          onClick={(e) => { e.stopPropagation(); setMenuForBot(menuForBot === member.id ? null : member.id) }}
+                          title="봇 옵션"
+                          className={cn(
+                            'absolute right-1 top-1/2 -translate-y-1/2 flex-shrink-0 p-0.5 rounded hover:bg-accent/70 transition-opacity',
+                            menuForBot === member.id ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+                          )}
+                        >
+                          <MoreVertical size={14} />
+                        </button>
+                        {menuForBot === member.id && (
+                          <div
+                            ref={botMenuRef}
+                            className="absolute right-1 top-full mt-1 z-30 min-w-[140px] bg-card border border-border rounded-lg shadow-lg py-1"
+                          >
+                            {botStatus === 'running' ? (
+                              <button
+                                onClick={() => pauseBot(member.id, member.name)}
+                                disabled={busy}
+                                className="flex items-center gap-2 w-full px-3 py-1.5 text-sm text-foreground hover:bg-accent/60 text-left"
+                              >
+                                <Pause size={13} />일시중지
+                              </button>
+                            ) : (
+                              <button
+                                onClick={() => restartBot(member.id, member.name)}
+                                disabled={busy}
+                                className="flex items-center gap-2 w-full px-3 py-1.5 text-sm text-foreground hover:bg-accent/60 text-left"
+                              >
+                                <Play size={13} />재시작
+                              </button>
+                            )}
+                            <button
+                              onClick={() => restartBot(member.id, member.name)}
+                              disabled={busy}
+                              className="flex items-center gap-2 w-full px-3 py-1.5 text-sm text-foreground hover:bg-accent/60 text-left"
+                            >
+                              <RefreshCw size={13} />게이트웨이 재시작
+                            </button>
+                          </div>
+                        )}
+                      </>
                     )}
-                  >
-                    <div className="w-5 h-5 rounded-full bg-primary/20 flex items-center justify-center text-xs font-bold flex-shrink-0">
-                      {member.name[0]}
-                    </div>
-                    <span className="truncate">{member.name}{member.isBot && BOT_ROLE_LABEL[member.id] ? ` (${BOT_ROLE_LABEL[member.id]})` : ''}</span>
-                    {member.isBot && <span className="text-xs text-muted-foreground ml-auto opacity-60">AI</span>}
-                  </Link>
+                  </div>
                 )
               })}
             </div>
