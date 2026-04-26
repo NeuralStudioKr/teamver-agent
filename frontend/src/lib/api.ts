@@ -57,9 +57,9 @@ export const api = {
     request<any>(`/channels/${channelId}/members`, { method: 'POST', body: JSON.stringify({ userId }) }),
   getMembers: () => request<any[]>('/members'),
   pauseBot: (botId: string) =>
-    request<any>(`/bots/${botId}/pause`, { method: 'POST' }),
+    request<any>(`/bots/${botId}/pause`, { method: 'POST', body: '{}' }),
   restartBot: (botId: string) =>
-    request<any>(`/bots/${botId}/restart`, { method: 'POST' }),
+    request<any>(`/bots/${botId}/restart`, { method: 'POST', body: '{}' }),
   getBotStatus: (botId: string) =>
     request<{ status: 'running' | 'paused' }>(`/bots/${botId}/status`),
 
