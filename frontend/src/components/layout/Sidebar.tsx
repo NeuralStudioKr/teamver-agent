@@ -19,9 +19,9 @@ interface SidebarProps {
 }
 
 const BOT_ROLE_LABEL: Record<string, string> = {
-  '00000000-0000-0000-0000-000000000001': '조율자',
-  '00000000-0000-0000-0000-000000000002': '작성자',
-  '00000000-0000-0000-0000-000000000003': '검수자',
+  '00000000-0000-0000-0000-000000000001': 'AI조율자',
+  '00000000-0000-0000-0000-000000000002': 'AI작성자',
+  '00000000-0000-0000-0000-000000000003': 'AI검수자',
 }
 
 export default function Sidebar({ workspace, channels, members, activeChannel, onChannelSelect, currentUser, onChannelsUpdate, width }: SidebarProps) {
@@ -320,24 +320,16 @@ export default function Sidebar({ workspace, channels, members, activeChannel, o
                       )}>
                         {member.name[0]}
                       </div>
-                      <span className="truncate">{member.name}{isBot && BOT_ROLE_LABEL[member.id] ? ` (${BOT_ROLE_LABEL[member.id]})` : ''}</span>
-                      {isBot && (
-                        <span className={cn(
-                          "text-xs flex-shrink-0 ml-auto",
-                          botStatus === 'paused' ? 'text-destructive' : 'text-muted-foreground opacity-60'
-                        )}>
-                          {botStatus === 'paused' ? '중지' : 'AI'}
-                        </span>
-                      )}
+                      <span className="truncate">
+                        {member.name}
+                        {isBot && BOT_ROLE_LABEL[member.id] ? `(${BOT_ROLE_LABEL[member.id]})` : ''}
+                      </span>
                     </Link>
                     {isBot && (
                       <button
                         onClick={(e) => { e.stopPropagation(); setMenuForBot(menuForBot === member.id ? null : member.id) }}
                         title="봇 옵션"
-                        className={cn(
-                          'flex-shrink-0 p-1 rounded hover:bg-accent/70 transition-opacity mr-1',
-                          menuForBot === member.id ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
-                        )}
+                        className="flex-shrink-0 p-1 rounded hover:bg-accent/70 text-muted-foreground hover:text-foreground mr-1"
                       >
                         <MoreVertical size={14} />
                       </button>
